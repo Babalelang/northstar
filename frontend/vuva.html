@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VUVA — The game decoded</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel = "stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap navbar">
+    <div class="logo">
+      <span class="l-v1">V</span><span class="l-u">U</span><span class="l-v2">V</span><span class="l-a">A</span>
+    </div>
+   <nav class="links">
+  <a href="index.html" class="active">Home</a>
+  <a href="table.html">Table</a>
+  <a href="fixtures.html">Fixtures</a>
+  <a href="news.html">News</a>
+  <a href="players.html">Players</a>
+  <a href="market.html">Market Value</a>
+  <a href="clubs.html">Clubs</a>
+  <a href="statistics.html">Statistics</a>
+</nav>
+  </div>
+</header>
+
+<!-- HOME -->
+<section class="page active" id="home">
+  <div class="hero">
+    <svg class="pitch-bg" viewBox="0 0 1180 640" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="0" width="1180" height="640" fill="var(--pitch)"/>
+      <g fill="none" stroke="#cfe3d5" stroke-width="2">
+        <rect x="60" y="60" width="1060" height="520"/>
+        <line x1="590" y1="60" x2="590" y2="580"/>
+        <circle cx="590" cy="320" r="70"/>
+        <circle cx="590" cy="320" r="3" fill="#cfe3d5"/>
+        <rect x="60" y="180" width="130" height="280"/>
+        <rect x="990" y="180" width="130" height="280"/>
+        <rect x="60" y="260" width="45" height="120"/>
+        <rect x="1075" y="260" width="45" height="120"/>
+        <path d="M60,60 A30,30 0 0,1 90,60" />
+        <path d="M1120,60 A30,30 0 0,0 1090,60" />
+        <path d="M60,580 A30,30 0 0,0 90,580" />
+        <path d="M1120,580 A30,30 0 0,1 1090,580" />
+      </g>
+    </svg>
+    <div class="hero-inner">
+      <div class="eyebrow">South African football intelligence</div>
+      <h1 class="wordmark">
+        <span class="l-v1">V</span><span class="l-u">U</span><span class="l-v2">V</span><span class="l-a">A</span>
+      </h1>
+      <div class="tagline">The game decoded</div>
+      <p class="hero-sub">Standings, form, player ratings and market value for the Betway Premiership — read the way scouts and analysts read it, stripped of the noise.</p>
+    </div>
+    <div class="wrap">
+      <div class="ticker">
+        <div class="t-item"><div class="t-label">League leader</div><div class="t-value">Orlando Pirates</div></div>
+        <div class="t-item"><div class="t-label">Top scorer</div><div class="t-value">14 goals</div></div>
+        <div class="t-item"><div class="t-label">Matches played</div><div class="t-value">240</div></div>
+        <div class="t-item"><div class="t-label">Most valuable</div><div class="t-value">€3.0m</div></div>
+      </div>
+      <div class="quicknav">
+        <div class="qn-card" data-goto="table">
+          <div class="qn-num">01</div>
+          <div class="qn-title">League table</div>
+          <div class="qn-desc">Full 2025/26 final standings, continental spots and the drop zone.</div>
+        </div>
+        <div class="qn-card" data-goto="news">
+          <div class="qn-num">02</div>
+          <div class="qn-title">Fixtures &amp; news</div>
+          <div class="qn-desc">What's shaping the title race and the transfer market right now.</div>
+        </div>
+        <div class="qn-card" data-goto="players">
+          <div class="qn-num">03</div>
+          <div class="qn-title">Player cards</div>
+          <div class="qn-desc">The VUVA Index — a composite read on form, output and role.</div>
+        </div>
+        <div class="qn-card" data-goto="market">
+          <div class="qn-num">04</div>
+          <div class="qn-title">Market value</div>
+          <div class="qn-desc">South Africa's most valuable players, ranked and priced.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TABLE -->
+<section class="page" id="table">
+  <div class="wrap">
+    <h2 class="section-title">Final standings — 2025/26</h2>
+    <p class="section-sub">Betway Premiership · 16 clubs · 30 matches played each</p>
+    <table class="psl" id="table-body">
+      <thead>
+        <tr>
+          <th>#</th><th>Club</th><th style="text-align:center">GP</th><th style="text-align:center">W</th>
+          <th style="text-align:center">D</th><th style="text-align:center">L</th><th style="text-align:center">GF</th>
+          <th style="text-align:center">GA</th><th style="text-align:center">GD</th><th style="text-align:center">Pts</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div class="legend">
+      <span><span class="dot" style="background:var(--gold)"></span> Champion</span>
+      <span><span class="dot" style="background:var(--green)"></span> CAF continental spot</span>
+      <span><span class="dot" style="background:var(--red)"></span> Relegation / playoff</span>
+    </div>
+    <p class="note">Standings compiled from ESPN's 2025-26 South African Premiership table. FBref's competition page did not permit direct automated access at the time of writing, so figures were cross-checked against ESPN's mirrored data for accuracy.</p>
+  </div>
+</section>
+
+<!-- NEWS -->
+<section class="page" id="news">
+  <div class="wrap">
+    <h2 class="section-title">Fixtures &amp; news</h2>
+    <p class="section-sub">The storylines moving the league right now</p>
+    <div class="news-grid" id="news-grid"></div>
+  </div>
+</section>
+
+<!-- PLAYERS -->
+<section class="page" id="players">
+  <div class="wrap">
+    <h2 class="section-title">Player cards</h2>
+    <p class="section-sub">The VUVA Index blends recent output, role importance and market trajectory into a single 0–99 rating. It's our own editorial model, not an official league metric.</p>
+    <div class="player-grid" id="player-grid"></div>
+  </div>
+</section>
+
+<!-- MARKET VALUE -->
+<section class="page" id="market">
+  <div class="wrap">
+    <h2 class="section-title">Most valuable South African players</h2>
+    <p class="section-sub">Per Transfermarkt's market value update, 5 June 2026</p>
+    <div class="mv-total">
+      <div class="mv-stat"><div class="mv-num">€155m</div><div class="mv-lab">League total value</div></div>
+      <div class="mv-stat"><div class="mv-num">16</div><div class="mv-lab">Clubs</div></div>
+      <div class="mv-stat"><div class="mv-num">27.3</div><div class="mv-lab">Average age</div></div>
+      <div class="mv-stat"><div class="mv-num">€3.0m</div><div class="mv-lab">Top valuation</div></div>
+    </div>
+    <table class="mv">
+      <thead><tr><th>#</th><th>Player</th><th>Club</th><th>Position</th><th class="bar-cell">Relative value</th><th style="text-align:right">Value</th></tr></thead>
+      <tbody id="mv-body"></tbody>
+    </table>
+    <p class="note">Figures reflect South African nationals only, drawn from Transfermarkt's Betway Premiership valuation board. Foreign-born teammates at the same clubs (several Sundowns signings among them) also feature near the top of the full league board but are excluded here to keep the focus on South African talent.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot-row">
+    <span>VUVA — the game decoded</span>
+    <span>Sources: ESPN, Transfermarkt, FBref</span>
+  </div>
+</footer>
+
+<script src = "script.js"></script>
+</body>
+</html>
