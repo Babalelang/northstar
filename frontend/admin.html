@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VUVA Admin Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body { background: #f6f7f3; }
+    .admin-shell { max-width: 1260px; margin: 0 auto; padding: 32px 24px 80px; }
+    .admin-card { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 24px; margin-bottom: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.04); }
+    .admin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+    .admin-menu { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0 24px; }
+    .admin-menu button { background: var(--paper-2); color: var(--ink); border: 1px solid var(--line); }
+    .admin-menu button.active { background: var(--ink); color: var(--paper); }
+    .stat-box { background: var(--paper-2); border-radius: 14px; padding: 18px; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(220px, 1fr)); gap: 14px; }
+    .form-grid label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--ink-soft); }
+    input, select, textarea, button { font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); }
+    textarea { min-height: 96px; resize: vertical; }
+    button { cursor: pointer; background: var(--ink); color: var(--paper); border: none; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 700px; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); font-size: 13px; }
+    th { font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-soft); }
+    .pill { display: inline-block; padding: 4px 10px; border-radius: 999px; background: var(--paper-2); font-size: 12px; }
+    .muted { color: var(--ink-soft); font-size: 12px; }
+    .action-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
+    .secondary { background: var(--paper-2); color: var(--ink); border: 1px solid var(--line); }
+    @media (max-width: 760px) { .form-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap navbar">
+      <div class="logo"><span class="l-v1">V</span><span class="l-u">U</span><span class="l-v2">V</span><span class="l-a">A</span></div>
+      <nav class="links">
+        <a href="vuva.html">Home</a>
+        <a href="admin.html" class="active">Admin</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="admin-shell">
+    <section class="admin-card">
+      <h2 class="section-title">Admin dashboard</h2>
+      <p class="section-sub">Manage all key football entities from one place.</p>
+      <div class="admin-menu">
+        <button type="button" class="active" data-section="announcements">Announcements</button>
+        <button type="button" data-section="players">Players</button>
+        <button type="button" data-section="teams">Teams</button>
+        <button type="button" data-section="competitions">Competitions</button>
+        <button type="button" data-section="seasons">Seasons</button>
+        <button type="button" data-section="standings">Standings</button>
+      </div>
+      <div class="admin-grid" id="summaryGrid"></div>
+    </section>
+
+    <section class="admin-card" data-panel="announcements">
+      <h3 class="section-title" style="font-size: 24px;">Announcements</h3>
+      <form id="announcementForm" class="form-grid">
+        <label>Title<input name="title" required /></label>
+        <label>Slug<input name="slug" /></label>
+        <label>Status<select name="status"><option value="draft">Draft</option><option value="published">Published</option></select></label>
+        <label>Type<select name="announcement_type"><option value="general">General</option><option value="transfer">Transfer</option><option value="match">Match</option><option value="weather">Weather</option></select></label>
+        <label style="grid-column: 1 / -1;">Summary<textarea name="summary"></textarea></label>
+        <label style="grid-column: 1 / -1;">Body<textarea name="body" required></textarea></label>
+        <label style="grid-column: 1 / -1;">Featured image<input name="featured_image_url" /></label>
+        <label><input type="checkbox" name="is_pinned" /> Pin this announcement</label>
+        <div class="action-row" style="grid-column: 1 / -1;"><button type="submit">Save announcement</button><button type="button" class="secondary" id="resetAnnouncement">Reset</button></div>
+      </form>
+      <div class="table-wrap" style="margin-top: 20px;"><table><thead><tr><th>Title</th><th>Status</th><th>Type</th><th>Updated</th><th>Actions</th></tr></thead><tbody id="announcementTable"></tbody></table></div>
+    </section>
+
+    <section class="admin-card" data-panel="players">
+      <h3 class="section-title" style="font-size: 24px;">Players</h3>
+      <form id="playerForm" class="form-grid">
+        <label>First name<input name="first_name" required /></label>
+        <label>Last name<input name="last_name" required /></label>
+        <label>Nationality<input name="nationality" required /></label>
+        <label>Position<select name="playing_position"><option value="gk">GK</option><option value="cb">CB</option><option value="lb">LB</option><option value="rb">RB</option><option value="cdm">CDM</option><option value="cm">CM</option><option value="cam">CAM</option><option value="lm">LM</option><option value="rm">RM</option><option value="lw">LW</option><option value="rw">RW</option><option value="cf">CF</option><option value="st">ST</option></select></label>
+        <label>Date of birth<input type="date" name="date_of_birth" required /></label>
+        <label>Team id<input type="number" name="team_id" required /></label>
+        <label>Goals<input type="number" min="0" name="goals" value="0" /></label>
+        <label>Assists<input type="number" min="0" name="assists" value="0" /></label>
+        <label>Minutes<input type="number" min="0" name="minutes_played" value="0" /></label>
+        <label>Form rating<input type="number" step="0.1" min="0" max="99" name="form_rating" value="70" /></label>
+        <label>Photo URL<input name="photo_url" /></label>
+        <label>Height (cm)<input type="number" name="height_cm" /></label>
+        <label>Preferred foot<select name="preferred_foot"><option value="">None</option><option value="left">Left</option><option value="right">Right</option><option value="both">Both</option></select></label>
+        <label>Shirt number<input type="number" name="club_shirt_number" /></label>
+        <div class="action-row" style="grid-column: 1 / -1;"><button type="submit">Save player</button><button type="button" class="secondary" id="resetPlayer">Reset</button></div>
+      </form>
+      <div class="table-wrap" style="margin-top: 20px;"><table><thead><tr><th>Name</th><th>Position</th><th>Team</th><th>Rating</th><th>Value</th><th>Actions</th></tr></thead><tbody id="playerTable"></tbody></table></div>
+    </section>
+
+    <section class="admin-card" data-panel="teams">
+      <h3 class="section-title" style="font-size: 24px;">Teams</h3>
+      <form id="teamForm" class="form-grid">
+        <label>Name<input name="name" required /></label>
+        <label>Short name<input name="short_name" /></label>
+        <label>City<input name="city" /></label>
+        <label>Country<input name="country" /></label>
+        <label>Stadium<input name="stadium" /></label>
+        <label>Website<input name="website" /></label>
+        <label>Founded year<input type="number" name="founded_year" /></label>
+        <label>Market value<input type="number" min="0" name="market_value_eur" /></label>
+        <label>Average rating<input type="number" step="0.1" min="0" max="99" name="average_rating" /></label>
+        <label style="grid-column: 1 / -1;">Logo URL<input name="logo_url" /></label>
+        <div class="action-row" style="grid-column: 1 / -1;"><button type="submit">Save team</button><button type="button" class="secondary" id="resetTeam">Reset</button></div>
+      </form>
+      <div class="table-wrap" style="margin-top: 20px;"><table><thead><tr><th>Name</th><th>City</th><th>Market value</th><th>Average rating</th><th>Actions</th></tr></thead><tbody id="teamTable"></tbody></table></div>
+    </section>
+
+    <section class="admin-card" data-panel="competitions">
+      <h3 class="section-title" style="font-size: 24px;">Competitions</h3>
+      <form id="competitionForm" class="form-grid">
+        <label>Name<input name="name" required /></label>
+        <label>Short name<input name="short_name" /></label>
+        <label>Code<input name="code" required /></label>
+        <label>Country<input name="country" required /></label>
+        <label>Governing body<input name="governing_body" /></label>
+        <label>Tier<input type="number" name="tier" /></label>
+        <label>Competition type<input name="competition_type" value="league" /></label>
+        <label><input type="checkbox" name="is_active" checked /> Active</label>
+        <label style="grid-column: 1 / -1;">Logo URL<input name="logo_url" /></label>
+        <div class="action-row" style="grid-column: 1 / -1;"><button type="submit">Save competition</button><button type="button" class="secondary" id="resetCompetition">Reset</button></div>
+      </form>
+      <div class="table-wrap" style="margin-top: 20px;"><table><thead><tr><th>Name</th><th>Code</th><th>Country</th><th>Status</th><th>Actions</th></tr></thead><tbody id="competitionTable"></tbody></table></div>
+    </section>
+
+    <section class="admin-card" data-panel="seasons">
+      <h3 class="section-title" style="font-size: 24px;">Seasons</h3>
+      <form id="seasonForm" class="form-grid">
+        <label>Label<input name="label" required /></label>
+        <label>Competition id<input type="number" name="competition_id" required /></label>
+        <label>Start date<input type="date" name="start_date" /></label>
+        <label>End date<input type="date" name="end_date" /></label>
+        <label><input type="checkbox" name="is_current" /> Current season</label>
+        <div class="action-row" style="grid-column: 1 / -1;"><button type="submit">Save season</button><button type="button" class="secondary" id="resetSeason">Reset</button></div>
+      </form>
+      <div class="table-wrap" style="margin-top: 20px;"><table><thead><tr><th>Label</th><th>Competition</th><th>Current</th><th>Actions</th></tr></thead><tbody id="seasonTable"></tbody></table></div>
+    </section>
+
+    <section class="admin-card" data-panel="standings">
+      <h3 class="section-title" style="font-size: 24px;">Standings</h3>
+      <form id="standingForm" class="form-grid">
+        <label>Position<input type="number" name="position" required /></label>
+        <label>Team id<input type="number" name="team_id" required /></label>
+        <label>Season id<input type="number" name="season_id" required /></label>
+        <label>Competition id<input type="number" name="competition_id" required /></label>
+        <label>Played<input type="number" min="0" name="played" value="0" /></label>
+        <label>Wins<input type="number" min="0" name="wins" value="0" /></label>
+        <label>Draws<input type="number" min="0" name="draws" value="0" /></label>
+        <label>Losses<input type="number" min="0" name="losses" value="0" /></label>
+        <label>Goals for<input type="number" min="0" name="goals_for" value="0" /></label>
+        <label>Goals against<input type="number" min="0" name="goals_against" value="0" /></label>
+        <label>Goal difference<input type="number" name="goal_difference" value="0" /></label>
+        <label>Points<input type="number" min="0" name="points" value="0" /></label>
+        <label>Form<input name="form" /></label>
+        <div class="action-row" style="grid-column: 1 / -1;"><button type="submit">Save standing</button><button type="button" class="secondary" id="resetStanding">Reset</button></div>
+      </form>
+      <div class="table-wrap" style="margin-top: 20px;"><table><thead><tr><th>Pos</th><th>Team</th><th>Played</th><th>Points</th><th>Actions</th></tr></thead><tbody id="standingTable"></tbody></table></div>
+    </section>
+  </main>
+
+  <script src="api.js"></script>
+  <script>
+    const state = { announcements: [], players: [], teams: [], competitions: [], seasons: [], standings: [], editingAnnouncement: null, editingPlayer: null, editingTeam: null, editingCompetition: null, editingSeason: null, editingStanding: null };
+
+    const summaryGrid = document.getElementById('summaryGrid');
+    const announcementForm = document.getElementById('announcementForm');
+    const playerForm = document.getElementById('playerForm');
+    const teamForm = document.getElementById('teamForm');
+    const competitionForm = document.getElementById('competitionForm');
+    const seasonForm = document.getElementById('seasonForm');
+    const standingForm = document.getElementById('standingForm');
+
+    function fmtCurrency(value) {
+      return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format((value || 0) * 20);
+    }
+
+    function renderSummary(summary) {
+      summaryGrid.innerHTML = `
+        <div class="stat-box"><div class="t-label">Players</div><div class="mv-num">${summary.total_players}</div></div>
+        <div class="stat-box"><div class="t-label">Teams</div><div class="mv-num">${summary.total_teams}</div></div>
+        <div class="stat-box"><div class="t-label">Announcements</div><div class="mv-num">${summary.total_announcements}</div></div>
+        <div class="stat-box"><div class="t-label">Avg rating</div><div class="mv-num">${summary.average_player_rating}</div></div>
+      `;
+    }
+
+    async function loadDashboard() {
+      const summary = await apiGet('/admin/overview');
+      renderSummary(summary);
+      const [announcements, players, teams, competitions, seasons, standings] = await Promise.all([
+        apiGet('/admin/announcements'),
+        apiGet('/admin/players'),
+        apiGet('/admin/teams'),
+        apiGet('/admin/competitions'),
+        apiGet('/admin/seasons'),
+        apiGet('/admin/standings')
+      ]);
+      state.announcements = announcements;
+      state.players = players;
+      state.teams = teams;
+      state.competitions = competitions;
+      state.seasons = seasons;
+      state.standings = standings;
+      renderAnnouncements();
+      renderPlayers();
+      renderTeams();
+      renderCompetitions();
+      renderSeasons();
+      renderStandings();
+    }
+
+    function resetAnnouncementForm() {
+      announcementForm.reset();
+      state.editingAnnouncement = null;
+      announcementForm.querySelector('button[type="submit"]').textContent = 'Save announcement';
+    }
+    function resetPlayerForm() { playerForm.reset(); state.editingPlayer = null; playerForm.querySelector('button[type="submit"]').textContent = 'Save player'; }
+    function resetTeamForm() { teamForm.reset(); state.editingTeam = null; teamForm.querySelector('button[type="submit"]').textContent = 'Save team'; }
+    function resetCompetitionForm() { competitionForm.reset(); state.editingCompetition = null; competitionForm.querySelector('button[type="submit"]').textContent = 'Save competition'; }
+    function resetSeasonForm() { seasonForm.reset(); state.editingSeason = null; seasonForm.querySelector('button[type="submit"]').textContent = 'Save season'; }
+    function resetStandingForm() { standingForm.reset(); state.editingStanding = null; standingForm.querySelector('button[type="submit"]').textContent = 'Save standing'; }
+
+    function showPanel(name) {
+      document.querySelectorAll('[data-panel]').forEach((panel) => {
+        panel.style.display = panel.dataset.panel === name ? 'block' : 'none';
+      });
+      document.querySelectorAll('.admin-menu button').forEach((button) => button.classList.toggle('active', button.dataset.section === name));
+    }
+
+    function renderAnnouncements() {
+      const tbody = document.getElementById('announcementTable');
+      tbody.innerHTML = state.announcements.map(item => `
+        <tr>
+          <td>${item.title}<div class="muted">${item.summary || ''}</div></td>
+          <td><span class="pill">${item.status}</span></td>
+          <td>${item.announcement_type}</td>
+          <td>${new Date(item.updated_at).toLocaleDateString()}</td>
+          <td><div class="action-row"><button class="secondary" data-action="edit-announcement" data-id="${item.id}">Edit</button><button class="secondary" data-action="delete-announcement" data-id="${item.id}">Delete</button></div></td>
+        </tr>
+      `).join('');
+    }
+
+    function renderPlayers() {
+      const tbody = document.getElementById('playerTable');
+      tbody.innerHTML = state.players.map(item => `
+        <tr>
+          <td>${item.first_name} ${item.last_name}<div class="muted">${item.nationality}</div></td>
+          <td>${item.playing_position}</td>
+          <td>${item.team_name || item.team_id}</td>
+          <td>${item.overall_rating || '-'}</td>
+          <td>${fmtCurrency(item.market_value_eur || 0)}</td>
+          <td><div class="action-row"><button class="secondary" data-action="edit-player" data-id="${item.id}">Edit</button><button class="secondary" data-action="delete-player" data-id="${item.id}">Delete</button></div></td>
+        </tr>
+      `).join('');
+    }
+
+    function renderTeams() {
+      const tbody = document.getElementById('teamTable');
+      tbody.innerHTML = state.teams.map(item => `
+        <tr>
+          <td>${item.name}</td>
+          <td>${item.city || '-'}</td>
+          <td>${fmtCurrency(item.market_value_eur || 0)}</td>
+          <td>${item.average_rating || '-'}</td>
+          <td><div class="action-row"><button class="secondary" data-action="edit-team" data-id="${item.id}">Edit</button><button class="secondary" data-action="delete-team" data-id="${item.id}">Delete</button></div></td>
+        </tr>
+      `).join('');
+    }
+
+    function renderCompetitions() {
+      const tbody = document.getElementById('competitionTable');
+      tbody.innerHTML = state.competitions.map(item => `
+        <tr>
+          <td>${item.name}</td>
+          <td>${item.code}</td>
+          <td>${item.country}</td>
+          <td><span class="pill">${item.is_active ? 'Active' : 'Inactive'}</span></td>
+          <td><div class="action-row"><button class="secondary" data-action="edit-competition" data-id="${item.id}">Edit</button><button class="secondary" data-action="delete-competition" data-id="${item.id}">Delete</button></div></td>
+        </tr>
+      `).join('');
+    }
+
+    function renderSeasons() {
+      const tbody = document.getElementById('seasonTable');
+      tbody.innerHTML = state.seasons.map(item => `
+        <tr>
+          <td>${item.label}</td>
+          <td>${item.competition_id}</td>
+          <td><span class="pill">${item.is_current ? 'Yes' : 'No'}</span></td>
+          <td><div class="action-row"><button class="secondary" data-action="edit-season" data-id="${item.id}">Edit</button><button class="secondary" data-action="delete-season" data-id="${item.id}">Delete</button></div></td>
+        </tr>
+      `).join('');
+    }
+
+    function renderStandings() {
+      const tbody = document.getElementById('standingTable');
+      tbody.innerHTML = state.standings.map(item => `
+        <tr>
+          <td>${item.position}</td>
+          <td>${item.team_name || item.team_id}</td>
+          <td>${item.played}</td>
+          <td>${item.points}</td>
+          <td><div class="action-row"><button class="secondary" data-action="edit-standing" data-id="${item.id}">Edit</button><button class="secondary" data-action="delete-standing" data-id="${item.id}">Delete</button></div></td>
+        </tr>
+      `).join('');
+    }
+
+    announcementForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const payload = Object.fromEntries(new FormData(announcementForm).entries());
+      payload.is_pinned = announcementForm.querySelector('input[name="is_pinned"]').checked;
+      if (state.editingAnnouncement) {
+        await apiPut(`/admin/announcements/${state.editingAnnouncement.id}`, payload);
+      } else {
+        await apiPost('/admin/announcements', payload);
+      }
+      resetAnnouncementForm();
+      await loadDashboard();
+    });
+    playerForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const payload = Object.fromEntries(new FormData(playerForm).entries());
+      payload.goals = Number(payload.goals || 0);
+      payload.assists = Number(payload.assists || 0);
+      payload.minutes_played = Number(payload.minutes_played || 0);
+      payload.form_rating = Number(payload.form_rating || 0);
+      payload.height_cm = Number(payload.height_cm || 0);
+      payload.club_shirt_number = Number(payload.club_shirt_number || 0);
+      payload.team_id = Number(payload.team_id);
+      if (state.editingPlayer) {
+        await apiPut(`/admin/players/${state.editingPlayer.id}`, payload);
+      } else {
+        await apiPost('/admin/players', payload);
+      }
+      resetPlayerForm();
+      await loadDashboard();
+    });
+    teamForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const payload = Object.fromEntries(new FormData(teamForm).entries());
+      payload.founded_year = Number(payload.founded_year || 0);
+      payload.market_value_eur = Number(payload.market_value_eur || 0);
+      payload.average_rating = Number(payload.average_rating || 0);
+      if (state.editingTeam) {
+        await apiPut(`/admin/teams/${state.editingTeam.id}`, payload);
+      } else {
+        await apiPost('/admin/teams', payload);
+      }
+      resetTeamForm();
+      await loadDashboard();
+    });
+    competitionForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const payload = Object.fromEntries(new FormData(competitionForm).entries());
+      payload.tier = Number(payload.tier || 0);
+      payload.is_active = competitionForm.querySelector('input[name="is_active"]').checked;
+      if (state.editingCompetition) {
+        await apiPut(`/admin/competitions/${state.editingCompetition.id}`, payload);
+      } else {
+        await apiPost('/admin/competitions', payload);
+      }
+      resetCompetitionForm();
+      await loadDashboard();
+    });
+    seasonForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const payload = Object.fromEntries(new FormData(seasonForm).entries());
+      payload.competition_id = Number(payload.competition_id || 0);
+      payload.is_current = seasonForm.querySelector('input[name="is_current"]').checked;
+      if (state.editingSeason) {
+        await apiPut(`/admin/seasons/${state.editingSeason.id}`, payload);
+      } else {
+        await apiPost('/admin/seasons', payload);
+      }
+      resetSeasonForm();
+      await loadDashboard();
+    });
+    standingForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const payload = Object.fromEntries(new FormData(standingForm).entries());
+      payload.position = Number(payload.position || 0);
+      payload.played = Number(payload.played || 0);
+      payload.wins = Number(payload.wins || 0);
+      payload.draws = Number(payload.draws || 0);
+      payload.losses = Number(payload.losses || 0);
+      payload.goals_for = Number(payload.goals_for || 0);
+      payload.goals_against = Number(payload.goals_against || 0);
+      payload.goal_difference = Number(payload.goal_difference || 0);
+      payload.points = Number(payload.points || 0);
+      payload.season_id = Number(payload.season_id || 0);
+      payload.competition_id = Number(payload.competition_id || 0);
+      payload.team_id = Number(payload.team_id || 0);
+      if (state.editingStanding) {
+        await apiPut(`/admin/standings/${state.editingStanding.id}`, payload);
+      } else {
+        await apiPost('/admin/standings', payload);
+      }
+      resetStandingForm();
+      await loadDashboard();
+    });
+
+    document.addEventListener('click', async (event) => {
+      const button = event.target.closest('button[data-action]');
+      if (!button) return;
+      const id = Number(button.dataset.id);
+      const action = button.dataset.action;
+      if (action === 'delete-announcement') {
+        await apiDelete(`/admin/announcements/${id}`);
+        await loadDashboard();
+      } else if (action === 'delete-player') {
+        await apiDelete(`/admin/players/${id}`);
+        await loadDashboard();
+      } else if (action === 'delete-team') {
+        await apiDelete(`/admin/teams/${id}`);
+        await loadDashboard();
+      } else if (action === 'delete-competition') {
+        await apiDelete(`/admin/competitions/${id}`);
+        await loadDashboard();
+      } else if (action === 'delete-season') {
+        await apiDelete(`/admin/seasons/${id}`);
+        await loadDashboard();
+      } else if (action === 'delete-standing') {
+        await apiDelete(`/admin/standings/${id}`);
+        await loadDashboard();
+      } else if (action === 'edit-announcement') {
+        const item = state.announcements.find((entry) => entry.id === id);
+        if (!item) return;
+        state.editingAnnouncement = item;
+        announcementForm.querySelector('input[name="title"]').value = item.title;
+        announcementForm.querySelector('input[name="slug"]').value = item.slug || '';
+        announcementForm.querySelector('select[name="status"]').value = item.status;
+        announcementForm.querySelector('select[name="announcement_type"]').value = item.announcement_type;
+        announcementForm.querySelector('textarea[name="summary"]').value = item.summary || '';
+        announcementForm.querySelector('textarea[name="body"]').value = item.body || '';
+        announcementForm.querySelector('input[name="featured_image_url"]').value = item.featured_image_url || '';
+        announcementForm.querySelector('input[name="is_pinned"]').checked = !!item.is_pinned;
+        announcementForm.querySelector('button[type="submit"]').textContent = 'Update announcement';
+      } else if (action === 'edit-player') {
+        const item = state.players.find((entry) => entry.id === id);
+        if (!item) return;
+        state.editingPlayer = item;
+        Object.entries(item).forEach(([key, value]) => {
+          const field = playerForm.querySelector(`[name="${key}"]`);
+          if (field) field.value = value ?? '';
+        });
+        playerForm.querySelector('button[type="submit"]').textContent = 'Update player';
+      } else if (action === 'edit-team') {
+        const item = state.teams.find((entry) => entry.id === id);
+        if (!item) return;
+        state.editingTeam = item;
+        Object.entries(item).forEach(([key, value]) => {
+          const field = teamForm.querySelector(`[name="${key}"]`);
+          if (field) field.value = value ?? '';
+        });
+        teamForm.querySelector('button[type="submit"]').textContent = 'Update team';
+      } else if (action === 'edit-competition') {
+        const item = state.competitions.find((entry) => entry.id === id);
+        if (!item) return;
+        state.editingCompetition = item;
+        Object.entries(item).forEach(([key, value]) => {
+          const field = competitionForm.querySelector(`[name="${key}"]`);
+          if (field) field.value = value ?? '';
+        });
+        competitionForm.querySelector('input[name="is_active"]').checked = !!item.is_active;
+        competitionForm.querySelector('button[type="submit"]').textContent = 'Update competition';
+      } else if (action === 'edit-season') {
+        const item = state.seasons.find((entry) => entry.id === id);
+        if (!item) return;
+        state.editingSeason = item;
+        Object.entries(item).forEach(([key, value]) => {
+          const field = seasonForm.querySelector(`[name="${key}"]`);
+          if (field) field.value = value ?? '';
+        });
+        seasonForm.querySelector('input[name="is_current"]').checked = !!item.is_current;
+        seasonForm.querySelector('button[type="submit"]').textContent = 'Update season';
+      } else if (action === 'edit-standing') {
+        const item = state.standings.find((entry) => entry.id === id);
+        if (!item) return;
+        state.editingStanding = item;
+        Object.entries(item).forEach(([key, value]) => {
+          const field = standingForm.querySelector(`[name="${key}"]`);
+          if (field) field.value = value ?? '';
+        });
+        standingForm.querySelector('button[type="submit"]').textContent = 'Update standing';
+      }
+    });
+
+    document.querySelectorAll('.admin-menu button').forEach((button) => {
+      button.addEventListener('click', () => showPanel(button.dataset.section));
+    });
+    showPanel('announcements');
+
+    document.getElementById('resetAnnouncement').addEventListener('click', resetAnnouncementForm);
+    document.getElementById('resetPlayer').addEventListener('click', resetPlayerForm);
+    document.getElementById('resetTeam').addEventListener('click', resetTeamForm);
+    document.getElementById('resetCompetition').addEventListener('click', resetCompetitionForm);
+    document.getElementById('resetSeason').addEventListener('click', resetSeasonForm);
+    document.getElementById('resetStanding').addEventListener('click', resetStandingForm);
+
+    loadDashboard().catch((error) => {
+      summaryGrid.innerHTML = '<div class="stat-box"><div class="t-label">Connection</div><div class="mv-num">Offline</div><div class="muted">Start the backend with uvicorn main:app --reload</div></div>';
+      console.error(error);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+{
+  "python.defaultInterpreterPath": "c:/Users/USER-PC/OneDrive/Documents/northstar/northstarPro/.venv/Scripts/python.exe",
+  "python.analysis.extraPaths": [
+    "c:/Users/USER-PC/OneDrive/Documents/northstar/northstarPro/backend"
+  ],
+  "python.analysis.typeCheckingMode": "basic"
+}

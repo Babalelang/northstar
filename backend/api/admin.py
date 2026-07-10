@@ -1,0 +1,423 @@
+import re
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
+from database.database import get_db
+from models import Announcement, AnnouncementStatus, AnnouncementType, Competition, Player, Season, Standing, Team
+from schemas.admin import (
+    AnnouncementCreate,
+    AnnouncementOut,
+    AnnouncementUpdate,
+    CompetitionCreate,
+    CompetitionOut,
+    CompetitionUpdate,
+    DashboardSummary,
+    PlayerCreate,
+    PlayerOut,
+    PlayerUpdate,
+    SeasonCreate,
+    SeasonOut,
+    SeasonUpdate,
+    StandingCreate,
+    StandingOut,
+    StandingUpdate,
+    TeamCreate,
+    TeamOut,
+    TeamUpdate,
+)
+from services.analytics_service import apply_player_metrics
+
+router = APIRouter(prefix="/admin", tags=["Admin"])
+
+
+def _slugify(text: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
+    return slug or "item"
+
+
+@router.get("/overview", response_model=DashboardSummary)
+def dashboard_overview(db: Session = Depends(get_db)):
+    players = db.query(Player).all()
+    teams = db.query(Team).all()
+    announcements = db.query(Announcement).all()
+    competitions = db.query(Competition).all()
+    seasons = db.query(Season).all()
+    standings = db.query(Standing).all()
+
+    average_player_rating = round(
+        sum(float(player.overall_rating or 0) for player in players) / len(players), 1
+    ) if players else 0.0
+
+    top_player = max(players, key=lambda player: player.market_value_eur or 0, default=None)
+    return DashboardSummary(
+        total_players=len(players),
+        total_teams=len(teams),
+        total_announcements=len(announcements),
+        total_competitions=len(competitions),
+        total_seasons=len(seasons),
+        total_standings=len(standings),
+        average_player_rating=average_player_rating,
+        top_player_value_eur=top_player.market_value_eur or 0 if top_player else 0,
+        top_player_name=(f"{top_player.first_name} {top_player.last_name}" if top_player else None),
+    )
+
+
+@router.get("/announcements", response_model=list[AnnouncementOut])
+def list_announcements(db: Session = Depends(get_db)):
+    return (
+        db.query(Announcement)
+        .order_by(Announcement.created_at.desc())
+        .all()
+    )
+
+
+@router.post("/announcements", response_model=AnnouncementOut, status_code=status.HTTP_201_CREATED)
+def create_announcement(payload: AnnouncementCreate, db: Session = Depends(get_db)):
+    slug = payload.slug or _slugify(payload.title)
+    item = Announcement(
+        title=payload.title,
+        slug=slug,
+        summary=payload.summary,
+        body=payload.body,
+        status=AnnouncementStatus(payload.status),
+        announcement_type=AnnouncementType(payload.announcement_type),
+        is_pinned=payload.is_pinned,
+        featured_image_url=payload.featured_image_url,
+        author_id=1,
+        published_at=datetime.utcnow() if payload.status == "published" else None,
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@router.put("/announcements/{announcement_id}", response_model=AnnouncementOut)
+def update_announcement(announcement_id: int, payload: AnnouncementUpdate, db: Session = Depends(get_db)):
+    item = db.get(Announcement, announcement_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Announcement not found")
+
+    item.title = payload.title
+    item.slug = payload.slug or _slugify(payload.title)
+    item.summary = payload.summary
+    item.body = payload.body
+    item.status = AnnouncementStatus(payload.status)
+    item.announcement_type = AnnouncementType(payload.announcement_type)
+    item.is_pinned = payload.is_pinned
+    item.featured_image_url = payload.featured_image_url
+    item.published_at = datetime.utcnow() if payload.status == "published" else None
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@router.delete("/announcements/{announcement_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_announcement(announcement_id: int, db: Session = Depends(get_db)):
+    item = db.get(Announcement, announcement_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Announcement not found")
+    db.delete(item)
+    db.commit()
+    return None
+
+
+@router.get("/players", response_model=list[PlayerOut])
+def list_players(db: Session = Depends(get_db)):
+    players = db.query(Player).order_by(Player.created_at.desc()).all()
+    output = []
+    for player in players:
+        team = db.get(Team, player.team_id)
+        item = PlayerOut.model_validate(player)
+        item.team_name = team.name if team else None
+        output.append(item)
+    return output
+
+
+@router.post("/players", response_model=PlayerOut, status_code=status.HTTP_201_CREATED)
+def create_player(payload: PlayerCreate, db: Session = Depends(get_db)):
+    item = Player(
+        first_name=payload.first_name,
+        last_name=payload.last_name,
+        date_of_birth=payload.date_of_birth,
+        nationality=payload.nationality,
+        height_cm=payload.height_cm,
+        preferred_foot=payload.preferred_foot,
+        photo_url=payload.photo_url,
+        club_shirt_number=payload.club_shirt_number,
+        playing_position=payload.playing_position,
+        team_id=payload.team_id,
+        goals=payload.goals or 0,
+        assists=payload.assists or 0,
+        minutes_played=payload.minutes_played or 0,
+        form_rating=payload.form_rating,
+    )
+    apply_player_metrics(item)
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return PlayerOut.model_validate(item)
+
+
+@router.put("/players/{player_id}", response_model=PlayerOut)
+def update_player(player_id: int, payload: PlayerUpdate, db: Session = Depends(get_db)):
+    item = db.get(Player, player_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Player not found")
+
+    item.first_name = payload.first_name
+    item.last_name = payload.last_name
+    item.date_of_birth = payload.date_of_birth
+    item.nationality = payload.nationality
+    item.height_cm = payload.height_cm
+    item.preferred_foot = payload.preferred_foot
+    item.photo_url = payload.photo_url
+    item.club_shirt_number = payload.club_shirt_number
+    item.playing_position = payload.playing_position
+    item.team_id = payload.team_id
+    item.goals = payload.goals or 0
+    item.assists = payload.assists or 0
+    item.minutes_played = payload.minutes_played or 0
+    item.form_rating = payload.form_rating
+    apply_player_metrics(item)
+    db.commit()
+    db.refresh(item)
+    return PlayerOut.model_validate(item)
+
+
+@router.delete("/players/{player_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_player(player_id: int, db: Session = Depends(get_db)):
+    item = db.get(Player, player_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Player not found")
+    db.delete(item)
+    db.commit()
+    return None
+
+
+@router.get("/teams", response_model=list[TeamOut])
+def list_teams(db: Session = Depends(get_db)):
+    return db.query(Team).order_by(Team.name.asc()).all()
+
+
+@router.post("/teams", response_model=TeamOut, status_code=status.HTTP_201_CREATED)
+def create_team(payload: TeamCreate, db: Session = Depends(get_db)):
+    item = Team(
+        name=payload.name,
+        short_name=payload.short_name,
+        city=payload.city,
+        country=payload.country,
+        stadium=payload.stadium,
+        logo_url=payload.logo_url,
+        website=payload.website,
+        founded_year=payload.founded_year,
+        market_value_eur=payload.market_value_eur or 0,
+        average_rating=payload.average_rating,
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@router.put("/teams/{team_id}", response_model=TeamOut)
+def update_team(team_id: int, payload: TeamUpdate, db: Session = Depends(get_db)):
+    item = db.get(Team, team_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Team not found")
+
+    item.name = payload.name
+    item.short_name = payload.short_name
+    item.city = payload.city
+    item.country = payload.country
+    item.stadium = payload.stadium
+    item.logo_url = payload.logo_url
+    item.website = payload.website
+    item.founded_year = payload.founded_year
+    item.market_value_eur = payload.market_value_eur or 0
+    item.average_rating = payload.average_rating
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@router.delete("/teams/{team_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_team(team_id: int, db: Session = Depends(get_db)):
+    item = db.get(Team, team_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Team not found")
+    db.delete(item)
+    db.commit()
+    return None
+
+
+@router.get("/competitions", response_model=list[CompetitionOut])
+def list_competitions(db: Session = Depends(get_db)):
+    return db.query(Competition).order_by(Competition.name.asc()).all()
+
+
+@router.post("/competitions", response_model=CompetitionOut, status_code=status.HTTP_201_CREATED)
+def create_competition(payload: CompetitionCreate, db: Session = Depends(get_db)):
+    item = Competition(
+        name=payload.name,
+        short_name=payload.short_name,
+        code=payload.code,
+        country=payload.country,
+        logo_url=payload.logo_url,
+        governing_body=payload.governing_body,
+        tier=payload.tier,
+        is_active=payload.is_active,
+        competition_type=payload.competition_type,
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@router.put("/competitions/{competition_id}", response_model=CompetitionOut)
+def update_competition(competition_id: int, payload: CompetitionUpdate, db: Session = Depends(get_db)):
+    item = db.get(Competition, competition_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Competition not found")
+    item.name = payload.name
+    item.short_name = payload.short_name
+    item.code = payload.code
+    item.country = payload.country
+    item.logo_url = payload.logo_url
+    item.governing_body = payload.governing_body
+    item.tier = payload.tier
+    item.is_active = payload.is_active
+    item.competition_type = payload.competition_type
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@router.delete("/competitions/{competition_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_competition(competition_id: int, db: Session = Depends(get_db)):
+    item = db.get(Competition, competition_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Competition not found")
+    db.delete(item)
+    db.commit()
+    return None
+
+
+@router.get("/seasons", response_model=list[SeasonOut])
+def list_seasons(db: Session = Depends(get_db)):
+    return db.query(Season).order_by(Season.label.asc()).all()
+
+
+@router.post("/seasons", response_model=SeasonOut, status_code=status.HTTP_201_CREATED)
+def create_season(payload: SeasonCreate, db: Session = Depends(get_db)):
+    item = Season(
+        label=payload.label,
+        start_date=payload.start_date,
+        end_date=payload.end_date,
+        is_current=payload.is_current,
+        competition_id=payload.competition_id,
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@router.put("/seasons/{season_id}", response_model=SeasonOut)
+def update_season(season_id: int, payload: SeasonUpdate, db: Session = Depends(get_db)):
+    item = db.get(Season, season_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Season not found")
+    item.label = payload.label
+    item.start_date = payload.start_date
+    item.end_date = payload.end_date
+    item.is_current = payload.is_current
+    item.competition_id = payload.competition_id
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@router.delete("/seasons/{season_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_season(season_id: int, db: Session = Depends(get_db)):
+    item = db.get(Season, season_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Season not found")
+    db.delete(item)
+    db.commit()
+    return None
+
+
+@router.get("/standings", response_model=list[StandingOut])
+def list_standings(db: Session = Depends(get_db)):
+    standings = db.query(Standing).order_by(Standing.position.asc()).all()
+    output = []
+    for standing in standings:
+        season = db.get(Season, standing.season_id)
+        competition = db.get(Competition, standing.competition_id)
+        team = db.get(Team, standing.team_id)
+        item = StandingOut.model_validate(standing)
+        item.team_name = team.name if team else None
+        item.season_label = season.label if season else None
+        item.competition_name = competition.name if competition else None
+        output.append(item)
+    return output
+
+
+@router.post("/standings", response_model=StandingOut, status_code=status.HTTP_201_CREATED)
+def create_standing(payload: StandingCreate, db: Session = Depends(get_db)):
+    item = Standing(
+        position=payload.position,
+        played=payload.played,
+        wins=payload.wins,
+        draws=payload.draws,
+        losses=payload.losses,
+        goals_for=payload.goals_for,
+        goals_against=payload.goals_against,
+        goal_difference=payload.goal_difference,
+        points=payload.points,
+        form=payload.form,
+        season_id=payload.season_id,
+        competition_id=payload.competition_id,
+        team_id=payload.team_id,
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return StandingOut.model_validate(item)
+
+
+@router.put("/standings/{standing_id}", response_model=StandingOut)
+def update_standing(standing_id: int, payload: StandingUpdate, db: Session = Depends(get_db)):
+    item = db.get(Standing, standing_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Standing not found")
+    item.position = payload.position
+    item.played = payload.played
+    item.wins = payload.wins
+    item.draws = payload.draws
+    item.losses = payload.losses
+    item.goals_for = payload.goals_for
+    item.goals_against = payload.goals_against
+    item.goal_difference = payload.goal_difference
+    item.points = payload.points
+    item.form = payload.form
+    item.season_id = payload.season_id
+    item.competition_id = payload.competition_id
+    item.team_id = payload.team_id
+    db.commit()
+    db.refresh(item)
+    return StandingOut.model_validate(item)
+
+
+@router.delete("/standings/{standing_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_standing(standing_id: int, db: Session = Depends(get_db)):
+    item = db.get(Standing, standing_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Standing not found")
+    db.delete(item)
+    db.commit()
+    return None

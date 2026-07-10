@@ -28,6 +28,7 @@
     backdrop-filter:blur(10px); border-bottom:1px solid var(--line);
   }
   .navbar{display:flex; align-items:center; justify-content:space-between; height:72px;}
+  .navbar .links{margin:0 auto;}
   .logo{font-family:var(--display); font-weight:700; font-size:26px; letter-spacing:0.5px; display:flex;}
   .logo span{display:inline-block;}
   .l-v1{color:var(--green);} .l-u{color:var(--gold);} .l-v2{color:var(--red);} .l-a{color:var(--blue);}
@@ -146,6 +147,8 @@ nav.links a.active{
   .mv-lab{font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--ink-soft); margin-top:6px;}
 
   .note{font-size:12px; color:var(--ink-soft); line-height:1.7; margin-top:28px; padding-top:20px; border-top:1px solid var(--line);}
+  .card-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:18px; margin-top:24px;}
+  .detail-card{background:#fff; border:1px solid var(--line); border-radius:16px; padding:24px; box-shadow:0 10px 30px rgba(17,17,17,0.03);}
 
   footer{border-top:1px solid var(--line); padding:36px 0; margin-top:0;}
   .foot-row{display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--ink-soft); font-family:var(--mono);}

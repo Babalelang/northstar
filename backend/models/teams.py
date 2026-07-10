@@ -1,0 +1,44 @@
+from sqlalchemy import Column,DateTime,Integer,String,Float, ForeignKey
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+from database.database import Base
+
+class Team(Base):
+    __tablename__ = "teams"
+
+    id = Column(Integer, primary_key = True, index = True)
+
+    name = Column(String(100),nullable = False, unique = True, index = True)
+    short_name = Column(String(20))
+    city = Column(String(100))
+    country = Column(String(100))
+    stadium = Column(String(100))
+    logo_url = Column(String(255))
+    website = Column(String(255))
+    founded_year = Column(Integer)
+    market_value_eur = Column(Integer, nullable=True)
+    average_rating = Column(Float, nullable=True)
+    
+    #relationships
+    venue_id = Column(Integer, ForeignKey("venues.id"))
+    venue = relationship("Venue", back_populates = "teams") # a venue has many teams
+    standings = relationship("Standing", back_populates = "team")
+    players = relationship("Player", back_populates = "team")
+    # foreign_keys takes the class name as it's actually defined, "Fixture",
+    # not the table name - this was pointing at a class that doesn't exist
+    home_fixtures = relationship("Fixture", foreign_keys = "Fixture.home_team_id",back_populates = "home_team",)
+    away_fixtures = relationship("Fixture", foreign_keys = "Fixture.away_team_id",back_populates = "away_team",)
+    match_statistics = relationship("MatchStatistic",back_populates="team")
+    team_statistics = relationship("TeamStatistic",back_populates="team")
+    match_events = relationship("MatchEvent",back_populates="team")
+    
+    #audit logs
+    created_at = Column(DateTime(timezone = True),
+                        server_default = func.now(),
+                        nullable = False)
+    
+    updated_at = Column(DateTime(timezone = True),
+                        server_default = func.now(),
+                        onupdate = func.now(),
+                        nullable = False
+                       )

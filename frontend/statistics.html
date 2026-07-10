@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VUVA Statistics</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; margin-top: 24px; }
+    .stats-card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 20px; }
+    .stats-card .metric { font-family: var(--display); font-size: 28px; font-weight: 700; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap navbar">
+      <div class="logo"><span class="l-v1">V</span><span class="l-u">U</span><span class="l-v2">V</span><span class="l-a">A</span></div>
+      <nav class="links">
+        <a href="vuva.html">Home</a>
+        <a href="table.html">Table</a>
+        <a href="fixtures.html">Fixtures</a>
+        <a href="news.html">News</a>
+        <a href="players.html">Players</a>
+        <a href="market.html">Market Value</a>
+        <a href="clubs.html">Clubs</a>
+        <a href="statistics.html" class="active">Statistics</a>
+        <a href="admin.html">Admin</a>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap" style="padding: 60px 24px 80px;">
+    <h2 class="section-title">Performance analytics</h2>
+    <p class="section-sub">A quick executive snapshot of the current content model, ratings, and market values.</p>
+    <div class="stats-grid" id="statsGrid"></div>
+  </main>
+  <script src="api.js"></script>
+  <script>
+    async function loadStats() {
+      const summary = await apiGet('/admin/overview');
+      const players = await apiGet('/admin/players');
+      const cards = [
+        { title: 'Players tracked', metric: summary.total_players },
+        { title: 'Average rating', metric: summary.average_player_rating.toFixed(1) },
+        { title: 'Top valuation', metric: `€${(summary.top_player_value_eur / 1000000).toFixed(1)}m` },
+        { title: 'Top player', metric: summary.top_player_name || 'N/A' },
+      ];
+      document.getElementById('statsGrid').innerHTML = cards.map((card) => `
+        <div class="stats-card">
+          <div class="t-label">${card.title}</div>
+          <div class="metric">${card.metric}</div>
+          <div class="muted">${players.length ? 'Calculated from live player data.' : 'No player records yet.'}</div>
+        </div>
+      `).join('');
+    }
+    loadStats().catch(() => {
+      document.getElementById('statsGrid').innerHTML = '<div class="stats-card"><div class="t-label">Backend offline</div><div class="metric">Unavailable</div><div class="muted">Start the API to populate these cards.</div></div>';
+    });
+  </script>
+</body>
+</html>
