@@ -27,14 +27,44 @@
     </div>
   </header>
   <main class="wrap" style="padding: 60px 24px 80px;">
-    <h2 class="section-title">Upcoming fixtures</h2>
-    <p class="section-sub">A refined view of the next matchdays, with the pressure points already highlighted.</p>
-    <div class="card-grid">
-      <article class="detail-card"><div class="news-tag">Fri · 20:00</div><div class="news-head">Pirates vs Sundowns</div><p class="news-body">Top-of-the-table clash with title-race ramifications and two of the league’s most potent attacks.</p></article>
-      <article class="detail-card"><div class="news-tag">Sat · 15:30</div><div class="news-head">Chiefs vs Stellenbosch</div><p class="news-body">A high-pressure weekend fixture for the Soweto side as they chase momentum.</p></article>
-      <article class="detail-card"><div class="news-tag">Sun · 17:00</div><div class="news-head">AmaZulu vs SuperSport</div><p class="news-body">An intelligent tactical matchup in which set-piece quality and transition control should decide the outcome.</p></article>
-      <article class="detail-card"><div class="news-tag">Mon · 19:30</div><div class="news-head">Cape Town City vs Sekhukhune</div><p class="news-body">A chance for the hosts to close the gap on the upper half of the table.</p></article>
-    </div>
+    <h2 class="section-title">Fixtures &amp; results</h2>
+    <p class="section-sub">Every match below comes straight from our own fixtures table — entered and updated through the admin panel.</p>
+    <div class="card-grid" id="fixtures-grid"></div>
   </main>
+  <script src="api.js"></script>
+  <script>
+    function fmtKickoff(iso) {
+      const d = new Date(iso);
+      return d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) + ' · ' +
+             d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    }
+    const STATUS_LABEL = {
+      scheduled: 'Upcoming', live: 'Live', halftime: 'Half-time',
+      fulltime: 'Full-time', postponed: 'Postponed', cancelled: 'Cancelled',
+    };
+    async function loadFixtures() {
+      const grid = document.getElementById('fixtures-grid');
+      try {
+        const fixtures = await apiGet('/fixtures/');
+        if (!fixtures.length) {
+          grid.innerHTML = '<div class="detail-card"><div class="news-head">No fixtures yet</div><p class="news-body">Add fixtures from the admin panel to see them listed here.</p></div>';
+          return;
+        }
+        grid.innerHTML = fixtures.map((f) => {
+          const score = (f.status === 'fulltime' || f.status === 'live' || f.status === 'halftime')
+            ? `${f.home_score} – ${f.away_score}` : 'vs';
+          return `
+            <article class="detail-card">
+              <div class="news-tag">${fmtKickoff(f.match_datetime)} · ${STATUS_LABEL[f.status] || f.status}</div>
+              <div class="news-head">${f.home_team.name} ${score} ${f.away_team.name}</div>
+              <p class="news-body">${f.venue_name || 'Venue TBC'}${f.round_name ? ' · ' + f.round_name : ''}${f.matchweek ? ' · Matchweek ' + f.matchweek : ''}</p>
+            </article>`;
+        }).join('');
+      } catch (err) {
+        grid.innerHTML = '<div class="detail-card"><div class="news-head">Backend offline</div><p class="news-body">Start the API with uvicorn main:app --reload to load fixtures.</p></div>';
+      }
+    }
+    loadFixtures();
+  </script>
 </body>
 </html>

@@ -3,7 +3,7 @@
 # out of this file, its table simply never gets created.
 from .teams import Team
 from .player import Player
-from .fixture import Fixture
+from .fixture import Fixture, FixtureStatus
 from .match_event import MatchEvent
 from .venue import Venue
 from .competition import Competition

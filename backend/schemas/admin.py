@@ -185,6 +185,69 @@ class StandingOut(StandingBase):
     updated_at: datetime
 
 
+class VenueBase(BaseModel):
+    name: str
+    city: str | None = None
+    country: str | None = None
+    capacity: int | None = None
+    address: str | None = None
+    surface: str | None = None
+    image_url: str | None = None
+
+
+class VenueCreate(VenueBase):
+    pass
+
+
+class VenueUpdate(VenueBase):
+    pass
+
+
+class VenueOut(VenueBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+
+class FixtureBase(BaseModel):
+    home_score: int = 0
+    away_score: int = 0
+    match_datetime: datetime
+    status: str = "scheduled"
+    matchweek: int | None = None
+    round_name: str | None = None
+    referee: str | None = None
+    attendance: int | None = None
+    home_team_id: int
+    away_team_id: int
+    venue_id: int
+    season_id: int
+    competition_id: int
+
+
+class FixtureCreate(FixtureBase):
+    pass
+
+
+class FixtureUpdate(FixtureBase):
+    pass
+
+
+class FixtureOut(FixtureBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    home_team_name: str | None = None
+    away_team_name: str | None = None
+    venue_name: str | None = None
+    season_label: str | None = None
+    competition_name: str | None = None
+    created_at: datetime
+    updated_at: datetime
+
+
 class DashboardSummary(BaseModel):
     total_players: int
     total_teams: int
@@ -192,6 +255,8 @@ class DashboardSummary(BaseModel):
     total_competitions: int
     total_seasons: int
     total_standings: int
+    total_fixtures: int
+    total_venues: int
     average_player_rating: float
     top_player_value_eur: int
     top_player_name: str | None = None

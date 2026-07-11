@@ -89,12 +89,15 @@ nav.links a.active{
   p.section-sub{color:var(--ink-soft); font-size:14px; margin:0 0 36px;}
 
   /* TABLE PAGE */
-  table.psl{width:100%; border-collapse:collapse; font-size:14px;}
+  .table-card{background:#fff; border:1px solid var(--line); border-radius:16px; padding:8px 20px; box-shadow:0 10px 30px rgba(17,17,17,0.03); overflow-x:auto;}
+  table.psl{width:100%; border-collapse:collapse; font-size:14px; min-width:560px;}
   table.psl th{
     text-align:left; font-family:var(--mono); font-size:11px; letter-spacing:1px; text-transform:uppercase;
     color:var(--ink-soft); font-weight:500; padding:10px 12px; border-bottom:1px solid var(--ink);
   }
   table.psl td{padding:14px 12px; border-bottom:1px solid var(--line);}
+  table.psl tbody tr:last-child td{border-bottom:none;}
+  table.psl tbody tr:hover td{background:var(--paper-2);}
   table.psl tr.zone-title td{border-left:3px solid var(--gold);}
   table.psl tr.zone-cont td{border-left:3px solid var(--green);}
   table.psl tr.zone-rel td{border-left:3px solid var(--red);}
@@ -103,7 +106,8 @@ nav.links a.active{
   table.psl td.pts{font-family:var(--mono); font-weight:600; color:var(--ink); text-align:center;}
   table.psl td.pos{font-family:var(--mono); color:var(--ink-soft); width:32px;}
   table.psl td.team{font-weight:600;}
-  .legend{display:flex; gap:24px; margin-top:20px; font-size:12px; color:var(--ink-soft);}
+  table.psl td.note{color:var(--ink-soft); font-size:13px; text-align:center; padding:28px 12px;}
+  .legend{display:flex; gap:24px; margin-top:20px; font-size:12px; color:var(--ink-soft); flex-wrap:wrap;}
   .legend span{display:flex; align-items:center; gap:6px;}
   .dot{width:9px; height:9px; border-radius:50%;}
 

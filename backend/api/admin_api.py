@@ -5,7 +5,19 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from database.database import get_db
-from models import Announcement, AnnouncementStatus, AnnouncementType, Competition, Player, Season, Standing, Team
+from models import (
+    Announcement,
+    AnnouncementStatus,
+    AnnouncementType,
+    Competition,
+    Fixture,
+    FixtureStatus,
+    Player,
+    Season,
+    Standing,
+    Team,
+    Venue,
+)
 from schemas.admin import (
     AnnouncementCreate,
     AnnouncementOut,
@@ -14,6 +26,9 @@ from schemas.admin import (
     CompetitionOut,
     CompetitionUpdate,
     DashboardSummary,
+    FixtureCreate,
+    FixtureOut,
+    FixtureUpdate,
     PlayerCreate,
     PlayerOut,
     PlayerUpdate,
@@ -26,6 +41,9 @@ from schemas.admin import (
     TeamCreate,
     TeamOut,
     TeamUpdate,
+    VenueCreate,
+    VenueOut,
+    VenueUpdate,
 )
 from services.analytics_service import apply_player_metrics
 
@@ -45,6 +63,8 @@ def dashboard_overview(db: Session = Depends(get_db)):
     competitions = db.query(Competition).all()
     seasons = db.query(Season).all()
     standings = db.query(Standing).all()
+    fixtures = db.query(Fixture).all()
+    venues = db.query(Venue).all()
 
     average_player_rating = round(
         sum(float(player.overall_rating or 0) for player in players) / len(players), 1
@@ -58,6 +78,8 @@ def dashboard_overview(db: Session = Depends(get_db)):
         total_competitions=len(competitions),
         total_seasons=len(seasons),
         total_standings=len(standings),
+        total_fixtures=len(fixtures),
+        total_venues=len(venues),
         average_player_rating=average_player_rating,
         top_player_value_eur=top_player.market_value_eur or 0 if top_player else 0,
         top_player_name=(f"{top_player.first_name} {top_player.last_name}" if top_player else None),
@@ -418,6 +440,132 @@ def delete_standing(standing_id: int, db: Session = Depends(get_db)):
     item = db.get(Standing, standing_id)
     if not item:
         raise HTTPException(status_code=404, detail="Standing not found")
+    db.delete(item)
+    db.commit()
+    return None
+
+
+@router.get("/venues", response_model=list[VenueOut])
+def list_venues(db: Session = Depends(get_db)):
+    return db.query(Venue).order_by(Venue.name.asc()).all()
+
+
+@router.post("/venues", response_model=VenueOut, status_code=status.HTTP_201_CREATED)
+def create_venue(payload: VenueCreate, db: Session = Depends(get_db)):
+    item = Venue(
+        name=payload.name,
+        city=payload.city,
+        country=payload.country,
+        capacity=payload.capacity,
+        address=payload.address,
+        surface=payload.surface,
+        image_url=payload.image_url,
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@router.put("/venues/{venue_id}", response_model=VenueOut)
+def update_venue(venue_id: int, payload: VenueUpdate, db: Session = Depends(get_db)):
+    item = db.get(Venue, venue_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Venue not found")
+    item.name = payload.name
+    item.city = payload.city
+    item.country = payload.country
+    item.capacity = payload.capacity
+    item.address = payload.address
+    item.surface = payload.surface
+    item.image_url = payload.image_url
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@router.delete("/venues/{venue_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_venue(venue_id: int, db: Session = Depends(get_db)):
+    item = db.get(Venue, venue_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Venue not found")
+    db.delete(item)
+    db.commit()
+    return None
+
+
+def _to_fixture_out(db: Session, fixture: Fixture) -> FixtureOut:
+    home_team = db.get(Team, fixture.home_team_id)
+    away_team = db.get(Team, fixture.away_team_id)
+    venue = db.get(Venue, fixture.venue_id)
+    season = db.get(Season, fixture.season_id)
+    competition = db.get(Competition, fixture.competition_id)
+    item = FixtureOut.model_validate(fixture)
+    item.home_team_name = home_team.name if home_team else None
+    item.away_team_name = away_team.name if away_team else None
+    item.venue_name = venue.name if venue else None
+    item.season_label = season.label if season else None
+    item.competition_name = competition.name if competition else None
+    return item
+
+
+@router.get("/fixtures", response_model=list[FixtureOut])
+def list_fixtures(db: Session = Depends(get_db)):
+    fixtures = db.query(Fixture).order_by(Fixture.match_datetime.desc()).all()
+    return [_to_fixture_out(db, fixture) for fixture in fixtures]
+
+
+@router.post("/fixtures", response_model=FixtureOut, status_code=status.HTTP_201_CREATED)
+def create_fixture(payload: FixtureCreate, db: Session = Depends(get_db)):
+    item = Fixture(
+        home_score=payload.home_score,
+        away_score=payload.away_score,
+        match_datetime=payload.match_datetime,
+        status=FixtureStatus(payload.status),
+        matchweek=payload.matchweek,
+        round_name=payload.round_name,
+        referee=payload.referee,
+        attendance=payload.attendance,
+        home_team_id=payload.home_team_id,
+        away_team_id=payload.away_team_id,
+        venue_id=payload.venue_id,
+        season_id=payload.season_id,
+        competition_id=payload.competition_id,
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return _to_fixture_out(db, item)
+
+
+@router.put("/fixtures/{fixture_id}", response_model=FixtureOut)
+def update_fixture(fixture_id: int, payload: FixtureUpdate, db: Session = Depends(get_db)):
+    item = db.get(Fixture, fixture_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Fixture not found")
+    item.home_score = payload.home_score
+    item.away_score = payload.away_score
+    item.match_datetime = payload.match_datetime
+    item.status = FixtureStatus(payload.status)
+    item.matchweek = payload.matchweek
+    item.round_name = payload.round_name
+    item.referee = payload.referee
+    item.attendance = payload.attendance
+    item.home_team_id = payload.home_team_id
+    item.away_team_id = payload.away_team_id
+    item.venue_id = payload.venue_id
+    item.season_id = payload.season_id
+    item.competition_id = payload.competition_id
+    db.commit()
+    db.refresh(item)
+    return _to_fixture_out(db, item)
+
+
+@router.delete("/fixtures/{fixture_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_fixture(fixture_id: int, db: Session = Depends(get_db)):
+    item = db.get(Fixture, fixture_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Fixture not found")
     db.delete(item)
     db.commit()
     return None

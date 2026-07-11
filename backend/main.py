@@ -1,8 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from backend.api import standings_api
 from database.database import Base, engine
 import models
-from api import admin, standings
+from backend.api import admin_api
+from backend.api import teams_api
+from backend.api import players_api
+from backend.api import fixtures_api
 
 app = FastAPI(    
     title = "VUVA API",
@@ -23,9 +27,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# every route in api/standings.py is now reachable under /api/standings
-app.include_router(standings.router, prefix="/api")
-app.include_router(admin.router, prefix="/api")
+# every route below is now reachable under /api/<router-prefix> - this is
+# our own API surface end to end, there's no external service in the loop
+app.include_router(standings_api.router, prefix="/api")
+app.include_router(teams_api.router, prefix="/api")
+app.include_router(players_api.router, prefix="/api")
+app.include_router(fixtures_api.router, prefix="/api")
+app.include_router(admin_api.router, prefix="/api")
 
 
 @app.get("/", tags=["Root"])

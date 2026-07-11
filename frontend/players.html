@@ -28,29 +28,45 @@
   </header>
   <main class="wrap" style="padding: 60px 24px 80px;">
     <h2 class="section-title">Player profiles</h2>
-    <p class="section-sub">A sharper look at the league’s best players, their output and how the VUVA rating model sees them.</p>
-    <div class="card-grid">
-      <article class="detail-card">
-        <div class="news-tag">AM</div>
-        <div class="news-head">Relebohile Mofokeng</div>
-        <p class="news-body">The most complete creative force in the league, combining explosive dribbling, inventive passing and genuine end-product.</p>
-      </article>
-      <article class="detail-card">
-        <div class="news-tag">CM</div>
-        <div class="news-head">Teboho Mokoena</div>
-        <p class="news-body">A midfielder whose control of tempo and positional discipline make him central to almost every attacking phase.</p>
-      </article>
-      <article class="detail-card">
-        <div class="news-tag">CF</div>
-        <div class="news-head">Iqraam Rayners</div>
-        <p class="news-body">Prolific in front of goal and effective in high-press situations, with a strong instinct for the decisive action.</p>
-      </article>
-      <article class="detail-card">
-        <div class="news-tag">RW</div>
-        <div class="news-head">Oswin Appollis</div>
-        <p class="news-body">A pacey wide attacker whose directness and speed can tear open defensive structure in transition.</p>
-      </article>
-    </div>
+    <p class="section-sub">The league's players, their output and how the VUVA rating model — computed from our own data — sees them.</p>
+    <div class="player-grid" id="player-grid"></div>
   </main>
+  <script src="api.js"></script>
+  <script>
+    function bar(label, val) {
+      return `<div class="skill-row"><div class="skill-label">${label}</div><div class="skill-bar"><div class="skill-fill" style="width:${val}%"></div></div><div class="skill-val">${val}</div></div>`;
+    }
+    async function loadPlayers() {
+      const grid = document.getElementById('player-grid');
+      try {
+        const players = await apiGet('/players/');
+        if (!players.length) {
+          grid.innerHTML = '<div class="detail-card"><div class="news-head">No players yet</div><p class="news-body">Add players from the admin panel to populate this page.</p></div>';
+          return;
+        }
+        grid.innerHTML = players.map((player) => `
+          <div class="pcard">
+            <div class="pcard-top">
+              <div>
+                <div class="pcard-name">${player.first_name} ${player.last_name}</div>
+                <div class="pcard-role">${player.playing_position.toUpperCase()} — ${player.team_name || 'Unattached'}</div>
+              </div>
+              <div class="pcard-index">${player.overall_rating || '-'}</div>
+            </div>
+            <div class="pcard-body">
+              ${bar('Form', Math.round(player.form_rating || 70))}
+              ${bar('Potential', Math.round(player.potential_rating || 70))}
+              ${bar('Goals', Math.min(99, (player.goals || 0) * 4 + 40))}
+              ${bar('Value', Math.min(99, Math.round((player.market_value_eur || 0) / 150000)))}
+            </div>
+            <div class="pcard-foot"><span>VUVA Index</span><span>Value R${((player.market_value_eur || 0) * 20).toLocaleString()}</span></div>
+          </div>
+        `).join('');
+      } catch (err) {
+        grid.innerHTML = '<div class="detail-card"><div class="news-head">Backend offline</div><p class="news-body">Start the API with uvicorn main:app --reload to load players.</p></div>';
+      }
+    }
+    loadPlayers();
+  </script>
 </body>
 </html>

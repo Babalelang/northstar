@@ -1,22 +1,54 @@
-<section class="page" id="table">
-  <div class="wrap">
-    <h2 class="section-title">Final standings — 2025/26</h2>
-    <p class="section-sub">Betway Premiership · 16 clubs · 30 matches played each</p>
-    <table class="psl" id="table-body">
-      <thead>
-        <tr>
-          <th>#</th><th>Club</th><th style="text-align:center">GP</th><th style="text-align:center">W</th>
-          <th style="text-align:center">D</th><th style="text-align:center">L</th><th style="text-align:center">GF</th>
-          <th style="text-align:center">GA</th><th style="text-align:center">GD</th><th style="text-align:center">Pts</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VUVA Table</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="top">
+    <div class="wrap navbar">
+      <div class="logo"><span class="l-v1">V</span><span class="l-u">U</span><span class="l-v2">V</span><span class="l-a">A</span></div>
+      <nav class="links">
+        <a href="vuva.html">Home</a>
+        <a href="table.html" class="active">Table</a>
+        <a href="fixtures.html">Fixtures</a>
+        <a href="news.html">News</a>
+        <a href="players.html">Players</a>
+        <a href="market.html">Market Value</a>
+        <a href="clubs.html">Clubs</a>
+        <a href="statistics.html">Statistics</a>
+        <a href="admin.html">Admin</a>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap" style="padding: 60px 24px 80px;">
+    <h2 class="section-title">League standings</h2>
+    <p class="section-sub">Every position, point and goal here is computed from our own fixture results and standings data.</p>
+    <div class="table-card">
+      <table class="psl" id="table-body">
+        <thead>
+          <tr>
+            <th>#</th><th>Club</th><th style="text-align:center">GP</th><th style="text-align:center">W</th>
+            <th style="text-align:center">D</th><th style="text-align:center">L</th><th style="text-align:center">GF</th>
+            <th style="text-align:center">GA</th><th style="text-align:center">GD</th><th style="text-align:center">Pts</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
     <div class="legend">
       <span><span class="dot" style="background:var(--gold)"></span> Champion</span>
       <span><span class="dot" style="background:var(--green)"></span> CAF continental spot</span>
       <span><span class="dot" style="background:var(--red)"></span> Relegation / playoff</span>
     </div>
-    <p class="note">Standings compiled from ESPN's 2025-26 South African Premiership table. FBref's competition page did not permit direct automated access at the time of writing, so figures were cross-checked against ESPN's mirrored data for accuracy.</p>
-  </div>
-</section>
+    <p class="note">Standings are calculated entirely from our own database — full-time fixture results, recomputed through <code>/api/standings/recompute</code> whenever an admin updates a match.</p>
+  </main>
+  <script src="api.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

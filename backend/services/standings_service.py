@@ -1,142 +1,144 @@
-import os
+from sqlalchemy.orm import Session
 
-from models import Team, Competition, Season, Standing
-from services import sportsdb_service
-
-# fixed identifiers for the one competition this project tracks. these
-# aren't "seed data" in the sense of pre-filled match/player rows - they're
-# just the lookup keys get_or_create_competition uses to find or create a
-# single Competition row, the same way you'd hardcode a slug anywhere else
-COMPETITION_CODE = "RSA-PSL"
-COMPETITION_NAME = "South African Premiership"
+from models.standings import Standing
+from models.fixture import Fixture, FixtureStatus
 
 
-def _season_label_from_env():
-    """Turns the .env season format ("2025-2026") into a display label
-    ("2025/26"), matching what the frontend already expects.
+class StandingsService:
+    """Plain CRUD helpers over the standings table, used by the public
+    and admin routers alike so the query logic only lives in one place.
     """
-    raw = os.getenv("SPORTSDB_SEASON", "2025-2026")
-    start, end = raw.split("-")
-    return f"{start}/{end[2:]}"
 
+    @staticmethod
+    def get_all(db: Session):
+        return db.query(Standing).order_by(Standing.position.asc()).all()
 
-def get_or_create_competition(db):
-    competition = (
-        db.query(Competition)
-        .filter(Competition.code == COMPETITION_CODE)
-        .first()
-    )
-    if competition:
-        return competition
+    @staticmethod
+    def get_by_team(db: Session, team_id: int):
+        return db.query(Standing).filter(Standing.team_id == team_id).first()
 
-    competition = Competition(
-        name=COMPETITION_NAME,
-        short_name="Premiership",
-        code=COMPETITION_CODE,
-        country="South Africa",
-        governing_body="PSL",
-        tier=1,
-    )
-    db.add(competition)
-    db.flush()  # assigns competition.id without needing a full commit yet
-    return competition
-
-
-def get_or_create_season(db, competition, label):
-    season = (
-        db.query(Season)
-        .filter(Season.label == label, Season.competition_id == competition.id)
-        .first()
-    )
-    if season:
-        return season
-
-    season = Season(
-        label=label,
-        is_current=True,
-        competition_id=competition.id,
-    )
-    db.add(season)
-    db.flush()
-    return season
-
-
-def get_or_create_team(db, name, badge_url):
-    team = db.query(Team).filter(Team.name == name).first()
-    if team:
-        # badge can change or arrive later than the team itself did
-        if badge_url and not team.logo_url:
-            team.logo_url = badge_url
-        return team
-
-    team = Team(name=name, country="South Africa", logo_url=badge_url)
-    db.add(team)
-    db.flush()
-    return team
-
-
-def _to_int(value, default=0):
-    """TheSportsDB returns most numeric fields as strings, and some as
-    null when a season hasn't started - this keeps the sync from blowing
-    up on either case.
-    """
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return default
-
-
-def sync_standings(db):
-    """Pulls the current table from TheSportsDB and upserts it into the
-    standings table. Returns the number of rows synced.
-
-    This is meant to be called from the /api/standings/sync endpoint, or
-    from scripts/sync_standings.py on a schedule (cron, task scheduler,
-    etc). It does not insert any data that didn't come back from the api.
-    """
-    season_label = _season_label_from_env()
-    sportsdb_season = os.getenv("SPORTSDB_SEASON", "2025-2026")
-
-    rows = sportsdb_service.get_league_table(sportsdb_season)
-    if not rows:
-        return 0
-
-    competition = get_or_create_competition(db)
-    season = get_or_create_season(db, competition, season_label)
-
-    synced = 0
-    for row in rows:
-        team = get_or_create_team(db, row.get("strTeam"), row.get("strBadge"))
-
-        standing = (
+    @staticmethod
+    def get_by_season(db: Session, season_id: int):
+        return (
             db.query(Standing)
-            .filter(
-                Standing.season_id == season.id,
-                Standing.competition_id == competition.id,
-                Standing.team_id == team.id,
-            )
-            .first()
+            .filter(Standing.season_id == season_id)
+            .order_by(Standing.position.asc())
+            .all()
         )
-        if not standing:
-            standing = Standing(
-                season_id=season.id,
-                competition_id=competition.id,
-                team_id=team.id,
-            )
+
+    @staticmethod
+    def get_by_competition(db: Session, competition_id: int):
+        return (
+            db.query(Standing)
+            .filter(Standing.competition_id == competition_id)
+            .order_by(Standing.position.asc())
+            .all()
+        )
+
+    @staticmethod
+    def create(db: Session, standing: Standing):
+        db.add(standing)
+        db.commit()
+        db.refresh(standing)
+        return standing
+
+    @staticmethod
+    def update(db: Session, standing: Standing):
+        db.commit()
+        db.refresh(standing)
+        return standing
+
+    @staticmethod
+    def delete(db: Session, standing: Standing):
+        db.delete(standing)
+        db.commit()
+
+
+def recompute_standings(db: Session, season_id: int, competition_id: int) -> int:
+    """Rebuilds the table for one season/competition purely from the
+    fixtures we already hold (status == FULLTIME).
+
+    This is what "our own API" means for standings: there's no outside
+    service to poll anymore, the table is just a derived view over the
+    fixtures an admin has entered/updated. Safe to call repeatedly - it
+    upserts existing Standing rows instead of duplicating them.
+
+    Returns the number of teams whose row was written.
+    """
+    fixtures = (
+        db.query(Fixture)
+        .filter(
+            Fixture.season_id == season_id,
+            Fixture.competition_id == competition_id,
+            Fixture.status == FixtureStatus.FULLTIME,
+        )
+        .all()
+    )
+
+    # team_id -> running totals
+    table: dict[int, dict[str, int]] = {}
+
+    def _row(team_id: int) -> dict[str, int]:
+        return table.setdefault(
+            team_id,
+            {"played": 0, "wins": 0, "draws": 0, "losses": 0, "goals_for": 0, "goals_against": 0, "points": 0},
+        )
+
+    for fixture in fixtures:
+        home = _row(fixture.home_team_id)
+        away = _row(fixture.away_team_id)
+
+        home["played"] += 1
+        away["played"] += 1
+        home["goals_for"] += fixture.home_score
+        home["goals_against"] += fixture.away_score
+        away["goals_for"] += fixture.away_score
+        away["goals_against"] += fixture.home_score
+
+        if fixture.home_score > fixture.away_score:
+            home["wins"] += 1
+            home["points"] += 3
+            away["losses"] += 1
+        elif fixture.home_score < fixture.away_score:
+            away["wins"] += 1
+            away["points"] += 3
+            home["losses"] += 1
+        else:
+            home["draws"] += 1
+            away["draws"] += 1
+            home["points"] += 1
+            away["points"] += 1
+
+    # points first, goal difference breaks ties, goals scored breaks that
+    ranked = sorted(
+        table.items(),
+        key=lambda entry: (entry[1]["points"], entry[1]["goals_for"] - entry[1]["goals_against"], entry[1]["goals_for"]),
+        reverse=True,
+    )
+
+    existing = {
+        standing.team_id: standing
+        for standing in db.query(Standing)
+        .filter(Standing.season_id == season_id, Standing.competition_id == competition_id)
+        .all()
+    }
+
+    for position, (team_id, totals) in enumerate(ranked, start=1):
+        goal_difference = totals["goals_for"] - totals["goals_against"]
+        standing = existing.get(team_id)
+        if standing is None:
+            standing = Standing(season_id=season_id, competition_id=competition_id, team_id=team_id)
             db.add(standing)
 
-        standing.position = _to_int(row.get("intRank"))
-        standing.played = _to_int(row.get("intPlayed"))
-        standing.wins = _to_int(row.get("intWin"))
-        standing.draws = _to_int(row.get("intDraw"))
-        standing.losses = _to_int(row.get("intLoss"))
-        standing.goals_for = _to_int(row.get("intGoalsFor"))
-        standing.goals_against = _to_int(row.get("intGoalsAgainst"))
-        standing.goal_difference = _to_int(row.get("intGoalDifference"))
-        standing.points = _to_int(row.get("intPoints"))
-        standing.form = row.get("strForm")
-
-        synced += 1
+        standing.position = position
+        standing.played = totals["played"]
+        standing.wins = totals["wins"]
+        standing.draws = totals["draws"]
+        standing.losses = totals["losses"]
+        standing.goals_for = totals["goals_for"]
+        standing.goals_against = totals["goals_against"]
+        standing.goal_difference = goal_difference
+        standing.points = totals["points"]
 
     db.commit()
-    return synced
+    return len(ranked)

@@ -5,7 +5,7 @@ async function loadStandings() {
   try {
     const standings = await apiGet("/standings/");
     if (!standings.length) {
-      tbody.innerHTML = `<tr><td colspan="10" class="note">No standings are available yet. Sync them from the admin endpoint or run the sync script.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="10" class="note">No standings yet — add fixture results in the admin panel, then recompute the table.</td></tr>`;
       return;
     }
 
@@ -34,7 +34,7 @@ async function loadNewsAndPlayers() {
   if (!ng || !pg || !mvBody) return;
 
   try {
-    const players = await apiGet("/admin/players");
+    const players = await apiGet("/players/");
 
     ng.innerHTML = [
       {tag: "Editorial", title: "The admin now owns the league data", body: "Standings, ratings and transfer notes are managed in the dashboard so every page remains consistent."},

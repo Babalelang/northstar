@@ -28,29 +28,31 @@
   </header>
   <main class="wrap" style="padding: 60px 24px 80px;">
     <h2 class="section-title">Club intelligence</h2>
-    <p class="section-sub">A concise view of the league’s most influential clubs, from title contenders to development projects.</p>
-    <div class="card-grid">
-      <article class="detail-card">
-        <div class="news-tag">Champion calibre</div>
-        <div class="news-head">Mamelodi Sundowns</div>
-        <p class="news-body">The standard-bearer of domestic football, blending squad depth, elite coaching and continental ambition.</p>
-      </article>
-      <article class="detail-card">
-        <div class="news-tag">Momentum</div>
-        <div class="news-head">Orlando Pirates</div>
-        <p class="news-body">A club with high-profile attacking talent and the kind of game-state control that can swing a title race.</p>
-      </article>
-      <article class="detail-card">
-        <div class="news-tag">Rising</div>
-        <div class="news-head">Kaizer Chiefs</div>
-        <p class="news-body">The biggest brand in South African football, focused on restoring consistency and reclaiming its place near the top.</p>
-      </article>
-      <article class="detail-card">
-        <div class="news-tag">Rebuild</div>
-        <div class="news-head">AmaZulu</div>
-        <p class="news-body">A club that has balanced youth development with smart signings and a clear tactical identity.</p>
-      </article>
-    </div>
+    <p class="section-sub">A concise view of every club in our own database, from title contenders to development projects.</p>
+    <div class="card-grid" id="clubs-grid"></div>
   </main>
+  <script src="api.js"></script>
+  <script>
+    async function loadClubs() {
+      const grid = document.getElementById('clubs-grid');
+      try {
+        const teams = await apiGet('/teams/');
+        if (!teams.length) {
+          grid.innerHTML = '<div class="detail-card"><div class="news-head">No clubs yet</div><p class="news-body">Add teams from the admin panel to populate this page.</p></div>';
+          return;
+        }
+        grid.innerHTML = teams.map((team) => `
+          <article class="detail-card">
+            <div class="news-tag">${team.city || team.country || 'Club'}</div>
+            <div class="news-head">${team.name}</div>
+            <p class="news-body">${team.stadium ? 'Plays at ' + team.stadium + '. ' : ''}${team.founded_year ? 'Founded ' + team.founded_year + '. ' : ''}${team.average_rating ? 'Average squad rating ' + team.average_rating + '.' : ''}</p>
+          </article>
+        `).join('');
+      } catch (err) {
+        grid.innerHTML = '<div class="detail-card"><div class="news-head">Backend offline</div><p class="news-body">Start the API with uvicorn main:app --reload to load clubs.</p></div>';
+      }
+    }
+    loadClubs();
+  </script>
 </body>
 </html>
