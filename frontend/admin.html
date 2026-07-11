@@ -31,9 +31,42 @@
     .action-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
     .secondary { background: var(--paper-2); color: var(--ink); border: 1px solid var(--line); }
     @media (max-width: 760px) { .form-grid { grid-template-columns: 1fr; } }
+
+    /* checkboxes were inheriting .form-grid label's flex-direction:column,
+       which stacked the box above the text instead of sitting beside it */
+    .form-grid label.checkbox-label { flex-direction: row; align-items: center; gap: 8px; }
+    .form-grid label.checkbox-label input[type="checkbox"] { width: 16px; height: 16px; margin: 0; padding: 0; accent-color: var(--ink); }
+
+    /* LOGIN SCREEN */
+    #loginScreen { min-height: calc(100vh - 72px); display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .login-card { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 36px; width: 100%; max-width: 380px; box-shadow: 0 10px 30px rgba(0,0,0,0.04); }
+    .login-card h2 { margin: 0 0 6px; }
+    .login-card p.section-sub { margin-bottom: 24px; }
+    .login-card form { display: flex; flex-direction: column; gap: 14px; }
+    .login-card label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--ink-soft); }
+    .login-card button[type="submit"] { margin-top: 6px; }
+    .login-error { background: #fdeeee; color: var(--red); border: 1px solid #f4c9c9; border-radius: 10px; padding: 10px 12px; font-size: 13px; display: none; }
+    .login-error.visible { display: block; }
+    .user-badge { display: flex; align-items: center; gap: 12px; margin-left: auto; }
+    .user-badge .pill { text-transform: capitalize; }
+    .navbar { flex-wrap: wrap; }
   </style>
 </head>
 <body>
+  <div id="loginScreen">
+    <div class="login-card">
+      <h2 class="section-title" style="font-size: 26px;">VUVA Admin</h2>
+      <p class="section-sub">Sign in with your admin or editor account.</p>
+      <div class="login-error" id="loginError"></div>
+      <form id="loginForm">
+        <label>Username<input name="username" required autocomplete="username" /></label>
+        <label>Password<input type="password" name="password" required autocomplete="current-password" /></label>
+        <button type="submit">Log in</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="appShell" style="display:none;">
   <header class="top">
     <div class="wrap navbar">
       <div class="logo"><span class="l-v1">V</span><span class="l-u">U</span><span class="l-v2">V</span><span class="l-a">A</span></div>
@@ -41,6 +74,10 @@
         <a href="vuva.html">Home</a>
         <a href="admin.html" class="active">Admin</a>
       </nav>
+      <div class="user-badge">
+        <span class="muted" id="whoami"></span>
+        <button type="button" class="secondary" id="logoutBtn">Log out</button>
+      </div>
     </div>
   </header>
 
@@ -57,6 +94,7 @@
         <button type="button" data-section="venues">Venues</button>
         <button type="button" data-section="fixtures">Fixtures</button>
         <button type="button" data-section="standings">Standings</button>
+        <button type="button" data-section="users" id="usersMenuBtn" style="display:none;">Users</button>
       </div>
       <div class="admin-grid" id="summaryGrid"></div>
     </section>
@@ -71,7 +109,7 @@
         <label style="grid-column: 1 / -1;">Summary<textarea name="summary"></textarea></label>
         <label style="grid-column: 1 / -1;">Body<textarea name="body" required></textarea></label>
         <label style="grid-column: 1 / -1;">Featured image<input name="featured_image_url" /></label>
-        <label><input type="checkbox" name="is_pinned" /> Pin this announcement</label>
+        <label class="checkbox-label"><input type="checkbox" name="is_pinned" /> Pin this announcement</label>
         <div class="action-row" style="grid-column: 1 / -1;"><button type="submit">Save announcement</button><button type="button" class="secondary" id="resetAnnouncement">Reset</button></div>
       </form>
       <div class="table-wrap" style="margin-top: 20px;"><table><thead><tr><th>Title</th><th>Status</th><th>Type</th><th>Updated</th><th>Actions</th></tr></thead><tbody id="announcementTable"></tbody></table></div>
@@ -127,7 +165,7 @@
         <label>Governing body<input name="governing_body" /></label>
         <label>Tier<input type="number" name="tier" /></label>
         <label>Competition type<input name="competition_type" value="league" /></label>
-        <label><input type="checkbox" name="is_active" checked /> Active</label>
+        <label class="checkbox-label"><input type="checkbox" name="is_active" checked /> Active</label>
         <label style="grid-column: 1 / -1;">Logo URL<input name="logo_url" /></label>
         <div class="action-row" style="grid-column: 1 / -1;"><button type="submit">Save competition</button><button type="button" class="secondary" id="resetCompetition">Reset</button></div>
       </form>
@@ -141,7 +179,7 @@
         <label>Competition id<input type="number" name="competition_id" required /></label>
         <label>Start date<input type="date" name="start_date" /></label>
         <label>End date<input type="date" name="end_date" /></label>
-        <label><input type="checkbox" name="is_current" /> Current season</label>
+        <label class="checkbox-label"><input type="checkbox" name="is_current" /> Current season</label>
         <div class="action-row" style="grid-column: 1 / -1;"><button type="submit">Save season</button><button type="button" class="secondary" id="resetSeason">Reset</button></div>
       </form>
       <div class="table-wrap" style="margin-top: 20px;"><table><thead><tr><th>Label</th><th>Competition</th><th>Current</th><th>Actions</th></tr></thead><tbody id="seasonTable"></tbody></table></div>
@@ -214,11 +252,70 @@
       </form>
       <div class="table-wrap" style="margin-top: 20px;"><table><thead><tr><th>Pos</th><th>Team</th><th>Played</th><th>Points</th><th>Actions</th></tr></thead><tbody id="standingTable"></tbody></table></div>
     </section>
+
+    <section class="admin-card" data-panel="users">
+      <h3 class="section-title" style="font-size: 24px;">Users</h3>
+      <p class="muted" style="margin: -8px 0 16px;">Only admins can see this tab. Admins and editors can both log in and manage content; only admins can manage other accounts.</p>
+      <form id="userForm" class="form-grid">
+        <label>First name<input name="first_name" required /></label>
+        <label>Last name<input name="last_name" required /></label>
+        <label>Username<input name="username" required /></label>
+        <label>Email<input type="email" name="email" required /></label>
+        <label>Role<select name="role"><option value="editor">Editor</option><option value="admin">Admin</option></select></label>
+        <label>Password<input type="password" name="password" autocomplete="new-password" placeholder="Leave blank to keep current" /></label>
+        <label class="checkbox-label"><input type="checkbox" name="is_active" checked /> Active</label>
+        <div class="action-row" style="grid-column: 1 / -1;"><button type="submit">Save user</button><button type="button" class="secondary" id="resetUser">Reset</button></div>
+      </form>
+      <div class="table-wrap" style="margin-top: 20px;"><table><thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Status</th><th>Last login</th><th>Actions</th></tr></thead><tbody id="userTable"></tbody></table></div>
+    </section>
   </main>
+  </div>
 
   <script src="api.js"></script>
   <script>
-    const state = { announcements: [], players: [], teams: [], competitions: [], seasons: [], venues: [], fixtures: [], standings: [], editingAnnouncement: null, editingPlayer: null, editingTeam: null, editingCompetition: null, editingSeason: null, editingVenue: null, editingFixture: null, editingStanding: null };
+    const loginScreen = document.getElementById('loginScreen');
+    const appShell = document.getElementById('appShell');
+    const loginForm = document.getElementById('loginForm');
+    const loginError = document.getElementById('loginError');
+    const usersMenuBtn = document.getElementById('usersMenuBtn');
+    const whoami = document.getElementById('whoami');
+
+    function showLoginScreen(message) {
+      loginScreen.style.display = 'flex';
+      appShell.style.display = 'none';
+      if (message) {
+        loginError.textContent = message;
+        loginError.classList.add('visible');
+      }
+    }
+
+    function showAppShell(user) {
+      loginScreen.style.display = 'none';
+      appShell.style.display = 'block';
+      whoami.textContent = `${user.first_name} ${user.last_name} · ${user.role}`;
+      usersMenuBtn.style.display = user.role === 'admin' ? 'inline-flex' : 'none';
+    }
+
+    loginForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      loginError.classList.remove('visible');
+      const payload = Object.fromEntries(new FormData(loginForm).entries());
+      try {
+        const result = await apiPost('/auth/login', payload);
+        setSession(result.token, result.user);
+        showAppShell(result.user);
+        await loadDashboard();
+      } catch (err) {
+        loginError.textContent = err.message.includes('401') ? 'Incorrect username or password.' : err.message;
+        loginError.classList.add('visible');
+      }
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      clearSession();
+      showLoginScreen();
+    });
+    const state = { announcements: [], players: [], teams: [], competitions: [], seasons: [], venues: [], fixtures: [], standings: [], users: [], editingAnnouncement: null, editingPlayer: null, editingTeam: null, editingCompetition: null, editingSeason: null, editingVenue: null, editingFixture: null, editingStanding: null, editingUser: null };
 
     const summaryGrid = document.getElementById('summaryGrid');
     const announcementForm = document.getElementById('announcementForm');
@@ -229,9 +326,10 @@
     const venueForm = document.getElementById('venueForm');
     const fixtureForm = document.getElementById('fixtureForm');
     const standingForm = document.getElementById('standingForm');
+    const userForm = document.getElementById('userForm');
 
     function fmtCurrency(value) {
-      return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format((value || 0) * 20);
+      return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(value || 0);
     }
 
     function renderSummary(summary) {
@@ -247,6 +345,7 @@
     async function loadDashboard() {
       const summary = await apiGet('/admin/overview');
       renderSummary(summary);
+      const currentUser = getCurrentUser();
       const [announcements, players, teams, competitions, seasons, venues, fixtures, standings] = await Promise.all([
         apiGet('/admin/announcements'),
         apiGet('/admin/players'),
@@ -273,6 +372,13 @@
       renderVenues();
       renderFixtures();
       renderStandings();
+
+      // /auth/users is admin-only server-side too, but skip the call
+      // entirely for editors instead of firing a request we know is a 403
+      if (currentUser && currentUser.role === 'admin') {
+        state.users = await apiGet('/auth/users');
+        renderUsers();
+      }
     }
 
     function resetAnnouncementForm() {
@@ -287,6 +393,7 @@
     function resetVenueForm() { venueForm.reset(); state.editingVenue = null; venueForm.querySelector('button[type="submit"]').textContent = 'Save venue'; }
     function resetFixtureForm() { fixtureForm.reset(); state.editingFixture = null; fixtureForm.querySelector('button[type="submit"]').textContent = 'Save fixture'; }
     function resetStandingForm() { standingForm.reset(); state.editingStanding = null; standingForm.querySelector('button[type="submit"]').textContent = 'Save standing'; }
+    function resetUserForm() { userForm.reset(); userForm.querySelector('input[name="is_active"]').checked = true; state.editingUser = null; userForm.querySelector('button[type="submit"]').textContent = 'Save user'; }
 
     function showPanel(name) {
       document.querySelectorAll('[data-panel]').forEach((panel) => {
@@ -394,6 +501,21 @@
           <td>${item.played}</td>
           <td>${item.points}</td>
           <td><div class="action-row"><button class="secondary" data-action="edit-standing" data-id="${item.id}">Edit</button><button class="secondary" data-action="delete-standing" data-id="${item.id}">Delete</button></div></td>
+        </tr>
+      `).join('');
+    }
+
+    function renderUsers() {
+      const tbody = document.getElementById('userTable');
+      const me = getCurrentUser();
+      tbody.innerHTML = state.users.map(item => `
+        <tr>
+          <td>${item.first_name} ${item.last_name}${item.id === me?.id ? ' <span class="pill">You</span>' : ''}</td>
+          <td>${item.username}</td>
+          <td><span class="pill">${item.role}</span></td>
+          <td><span class="pill">${item.is_active ? 'Active' : 'Deactivated'}</span></td>
+          <td>${item.last_login ? new Date(item.last_login).toLocaleString() : 'Never'}</td>
+          <td><div class="action-row"><button class="secondary" data-action="edit-user" data-id="${item.id}">Edit</button><button class="secondary" data-action="delete-user" data-id="${item.id}" ${item.id === me?.id ? 'disabled' : ''}>Delete</button></div></td>
         </tr>
       `).join('');
     }
@@ -539,6 +661,27 @@
       resetStandingForm();
       await loadDashboard();
     });
+    userForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const payload = Object.fromEntries(new FormData(userForm).entries());
+      payload.is_active = userForm.querySelector('input[name="is_active"]').checked;
+      if (!payload.password) delete payload.password;
+      try {
+        if (state.editingUser) {
+          await apiPut(`/auth/users/${state.editingUser.id}`, payload);
+        } else {
+          if (!payload.password) {
+            alert('A password is required when creating a new user.');
+            return;
+          }
+          await apiPost('/auth/users', payload);
+        }
+        resetUserForm();
+        await loadDashboard();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
 
     document.addEventListener('click', async (event) => {
       const button = event.target.closest('button[data-action]');
@@ -569,6 +712,14 @@
       } else if (action === 'delete-standing') {
         await apiDelete(`/admin/standings/${id}`);
         await loadDashboard();
+      } else if (action === 'delete-user') {
+        if (!confirm('Delete this user? This cannot be undone.')) return;
+        try {
+          await apiDelete(`/auth/users/${id}`);
+          await loadDashboard();
+        } catch (err) {
+          alert(err.message);
+        }
       } else if (action === 'edit-announcement') {
         const item = state.announcements.find((entry) => entry.id === id);
         if (!item) return;
@@ -653,6 +804,18 @@
           if (field) field.value = value ?? '';
         });
         standingForm.querySelector('button[type="submit"]').textContent = 'Update standing';
+      } else if (action === 'edit-user') {
+        const item = state.users.find((entry) => entry.id === id);
+        if (!item) return;
+        state.editingUser = item;
+        userForm.querySelector('input[name="first_name"]').value = item.first_name;
+        userForm.querySelector('input[name="last_name"]').value = item.last_name;
+        userForm.querySelector('input[name="username"]').value = item.username;
+        userForm.querySelector('input[name="email"]').value = item.email;
+        userForm.querySelector('select[name="role"]').value = item.role;
+        userForm.querySelector('input[name="password"]').value = '';
+        userForm.querySelector('input[name="is_active"]').checked = !!item.is_active;
+        userForm.querySelector('button[type="submit"]').textContent = 'Update user';
       }
     });
 
@@ -669,11 +832,28 @@
     document.getElementById('resetVenue').addEventListener('click', resetVenueForm);
     document.getElementById('resetFixture').addEventListener('click', resetFixtureForm);
     document.getElementById('resetStanding').addEventListener('click', resetStandingForm);
+    document.getElementById('resetUser').addEventListener('click', resetUserForm);
 
-    loadDashboard().catch((error) => {
-      summaryGrid.innerHTML = '<div class="stat-box"><div class="t-label">Connection</div><div class="mv-num">Offline</div><div class="muted">Start the backend with uvicorn main:app --reload</div></div>';
-      console.error(error);
-    });
+    // on load: if we have a stored token, verify it's still valid before
+    // showing the dashboard - a token can go stale (expired, or the user
+    // was deactivated) between visits, so we don't just trust localStorage
+    async function init() {
+      const token = getToken();
+      if (!token) {
+        showLoginScreen();
+        return;
+      }
+      try {
+        const user = await apiGet('/auth/me');
+        setSession(token, user); // refresh cached user info in case it changed
+        showAppShell(user);
+        await loadDashboard();
+      } catch (err) {
+        clearSession();
+        showLoginScreen(err instanceof AuthError ? 'Your session expired - please log in again.' : null);
+      }
+    }
+    init();
   </script>
 </body>
 </html>

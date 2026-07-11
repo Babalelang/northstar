@@ -8,6 +8,21 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
+  <style>
+    /* page-local additions: style.css defines .detail-card/.news-tag/.news-head/
+       .news-body but never defined these, which the markup below relies on */
+    .news-img{
+      display:block; width:calc(100% + 48px); height:170px; object-fit:cover;
+      margin:-24px -24px 16px; border-radius:16px 16px 0 0;
+    }
+    .news-pin{
+      font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:0.5px;
+      background:var(--gold); color:var(--ink); padding:2px 8px; border-radius:10px; margin-left:8px;
+    }
+    .news-meta{
+      font-family:var(--mono); font-size:11px; color:var(--ink-soft); margin-top:14px;
+    }
+  </style>
 </head>
 <body>
   <header class="top">
@@ -27,8 +42,16 @@
     </div>
   </header>
   <main class="wrap" style="padding: 60px 24px 80px;">
-    <h2 class="section-title">League coverage</h2>
-    <p class="section-sub">More context, less noise — the stories that shape the season.</p>
+    <div class="page-head">
+      <div>
+        <h2 class="section-title" style="margin-bottom:6px;">League coverage</h2>
+        <p class="section-sub" style="margin-bottom:0;">More context, less noise — the stories that shape the season.</p>
+      </div>
+      <div class="search-shell">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="news-search" type="text" placeholder="Search news..." autocomplete="off" />
+      </div>
+    </div>
     <div class="card-grid" id="news-grid">
       <p class="note">Loading news…</p>
     </div>
@@ -52,37 +75,56 @@
       return `${diffDays}d ago`;
     }
 
+    let allAnnouncements = [];
+
+    function renderNews(announcements) {
+      const grid = document.getElementById('news-grid');
+      if (!announcements.length) {
+        grid.innerHTML = '<p class="note">No stories match your search.</p>';
+        return;
+      }
+      grid.innerHTML = announcements.map((a) => {
+        const tag = TYPE_LABELS[a.announcement_type] || 'General';
+        const pinned = a.is_pinned ? '<span class="news-pin">Pinned</span>' : '';
+        const summary = a.summary || (a.body ? a.body.slice(0, 160) + '…' : '');
+        const img = a.featured_image_url
+          ? `<img src="${a.featured_image_url}" alt="" class="news-img" />`
+          : '';
+        return `
+          <article class="detail-card">
+            ${img}
+            <div class="news-tag">${tag}${pinned}</div>
+            <div class="news-head">${a.title}</div>
+            <p class="news-body">${summary}</p>
+            <div class="news-meta">${timeAgo(a.published_at)}</div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function matchesQuery(a, query) {
+      const haystack = [a.title, a.summary, a.body, a.announcement_type].filter(Boolean).join(' ').toLowerCase();
+      return haystack.includes(query);
+    }
+
     async function loadNews() {
       const grid = document.getElementById('news-grid');
       try {
-        const announcements = await apiGet('/announcements/');
-
-        if (!announcements.length) {
+        allAnnouncements = await apiGet('/announcements/');
+        if (!allAnnouncements.length) {
           grid.innerHTML = '<p class="note">No news yet — check back soon.</p>';
           return;
         }
-
-        grid.innerHTML = announcements.map((a) => {
-          const tag = TYPE_LABELS[a.announcement_type] || 'General';
-          const pinned = a.is_pinned ? '<span class="news-pin">Pinned</span>' : '';
-          const summary = a.summary || (a.body ? a.body.slice(0, 160) + '…' : '');
-          const img = a.featured_image_url
-            ? `<img src="${a.featured_image_url}" alt="" class="news-img" />`
-            : '';
-          return `
-            <article class="detail-card">
-              ${img}
-              <div class="news-tag">${tag} ${pinned}</div>
-              <div class="news-head">${a.title}</div>
-              <p class="news-body">${summary}</p>
-              <div class="news-meta">${timeAgo(a.published_at)}</div>
-            </article>
-          `;
-        }).join('');
+        renderNews(allAnnouncements);
       } catch (err) {
         grid.innerHTML = '<p class="note">Could not reach the VUVA API. Start the backend with uvicorn main:app --reload.</p>';
       }
     }
+
+    document.getElementById('news-search').addEventListener('input', (event) => {
+      const query = event.target.value.trim().toLowerCase();
+      renderNews(query ? allAnnouncements.filter((a) => matchesQuery(a, query)) : allAnnouncements);
+    });
 
     loadNews();
   </script>

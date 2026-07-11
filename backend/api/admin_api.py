@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from database.database import get_db
+from api.deps import get_current_user
 from models import (
     Announcement,
     AnnouncementStatus,
@@ -18,6 +19,7 @@ from models import (
     Team,
     Venue,
 )
+from models.user import User
 from schemas.admin import (
     AnnouncementCreate,
     AnnouncementOut,
@@ -47,7 +49,7 @@ from schemas.admin import (
 )
 from services.analytics_service import apply_player_metrics
 
-router = APIRouter(prefix="/admin", tags=["Admin"])
+router = APIRouter(prefix="/admin", tags=["Admin"], dependencies=[Depends(get_current_user)])
 
 
 def _slugify(text: str) -> str:
@@ -96,7 +98,7 @@ def list_announcements(db: Session = Depends(get_db)):
 
 
 @router.post("/announcements", response_model=AnnouncementOut, status_code=status.HTTP_201_CREATED)
-def create_announcement(payload: AnnouncementCreate, db: Session = Depends(get_db)):
+def create_announcement(payload: AnnouncementCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     slug = payload.slug or _slugify(payload.title)
     item = Announcement(
         title=payload.title,
@@ -107,7 +109,7 @@ def create_announcement(payload: AnnouncementCreate, db: Session = Depends(get_d
         announcement_type=AnnouncementType(payload.announcement_type),
         is_pinned=payload.is_pinned,
         featured_image_url=payload.featured_image_url,
-        author_id=1,
+        author_id=current_user.id,
         published_at=datetime.utcnow() if payload.status == "published" else None,
     )
     db.add(item)

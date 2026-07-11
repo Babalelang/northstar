@@ -9,9 +9,36 @@
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
   <style>
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; margin-top: 24px; }
-    .stats-card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 20px; }
-    .stats-card .metric { font-family: var(--display); font-size: 28px; font-weight: 700; margin-top: 8px; }
+    .stat-ticker{display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); margin-bottom:36px;}
+    .stat-ticker .t-item{background:#fff; padding:20px; text-align:center;}
+
+    .board-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px; margin-bottom:20px;}
+    .board-card{background:#fff; border:1px solid var(--line); border-radius:16px; padding:22px; box-shadow:0 10px 30px rgba(17,17,17,0.03);}
+    .board-head{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px;}
+    .board-title{font-family:var(--display); font-weight:600; font-size:16px;}
+    .board-sub{font-family:var(--mono); font-size:10.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.5px;}
+    .board-list{list-style:none; margin:0; padding:0;}
+    .board-row{display:flex; align-items:center; gap:12px; padding:9px 0; border-bottom:1px solid var(--line);}
+    .board-row:last-child{border-bottom:none;}
+    .board-rank{font-family:var(--mono); font-size:12px; color:var(--ink-soft); width:16px; flex-shrink:0;}
+    .board-avatar{
+      width:32px; height:32px; border-radius:50%; flex-shrink:0; color:#fff; font-size:11px;
+      display:flex; align-items:center; justify-content:center; font-family:var(--display); font-weight:700;
+      background-size:cover; background-position:center;
+    }
+    .board-name-block{min-width:0; flex:1;}
+    .board-name{font-weight:600; font-size:13.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .board-meta{font-family:var(--mono); font-size:10.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.4px;}
+    .board-value{font-family:var(--mono); font-weight:700; font-size:14px; flex-shrink:0;}
+
+    .position-bars{display:flex; flex-direction:column; gap:8px;}
+    .position-bar-row{display:grid; grid-template-columns:44px 1fr 28px; align-items:center; gap:10px; font-size:12px;}
+    .position-bar-label{font-family:var(--mono); color:var(--ink-soft); text-transform:uppercase;}
+    .position-bar-track{height:8px; background:var(--paper-2); border-radius:4px; overflow:hidden;}
+    .position-bar-fill{height:100%; background:var(--green); border-radius:4px;}
+    .position-bar-count{font-family:var(--mono); color:var(--ink-soft); text-align:right;}
+
+    .empty-state{background:#fff; border:1px solid var(--line); border-radius:16px; padding:40px 24px; text-align:center; grid-column:1/-1;}
   </style>
 </head>
 <body>
@@ -32,32 +59,172 @@
     </div>
   </header>
   <main class="wrap" style="padding: 60px 24px 80px;">
-    <h2 class="section-title">Performance analytics</h2>
-    <p class="section-sub">A quick executive snapshot of the current content model, ratings, and market values.</p>
-    <div class="stats-grid" id="statsGrid"></div>
+    <h2 class="section-title">League statistics</h2>
+    <p class="section-sub">The season, broken down — top performers, best squads, and where the league's talent sits, all pulled live from our own database.</p>
+
+    <div class="stat-ticker" id="statTicker"></div>
+    <div class="board-grid" id="boardGrid"></div>
+    <div class="board-grid" style="grid-template-columns: 1fr;">
+      <div class="board-card" id="positionCard" style="display:none;">
+        <div class="board-head"><div class="board-title">Squad composition</div><div class="board-sub">Players by position</div></div>
+        <div class="position-bars" id="positionBars"></div>
+      </div>
+    </div>
   </main>
   <script src="api.js"></script>
   <script>
-    async function loadStats() {
-      const summary = await apiGet('/admin/overview');
-      const players = await apiGet('/admin/players');
-      const cards = [
-        { title: 'Players tracked', metric: summary.total_players },
-        { title: 'Average rating', metric: summary.average_player_rating.toFixed(1) },
-        { title: 'Top valuation', metric: `€${(summary.top_player_value_eur / 1000000).toFixed(1)}m` },
-        { title: 'Top player', metric: summary.top_player_name || 'N/A' },
-      ];
-      document.getElementById('statsGrid').innerHTML = cards.map((card) => `
-        <div class="stats-card">
-          <div class="t-label">${card.title}</div>
-          <div class="metric">${card.metric}</div>
-          <div class="muted">${players.length ? 'Calculated from live player data.' : 'No player records yet.'}</div>
-        </div>
-      `).join('');
+    const AVATAR_COLORS = ['#007A4D', '#FFB612', '#DE3831', '#001489'];
+    const POSITION_GROUPS = {
+      gk: 'Goalkeepers', cb: 'Defenders', lb: 'Defenders', rb: 'Defenders',
+      cdm: 'Midfielders', cm: 'Midfielders', cam: 'Midfielders', lm: 'Midfielders', rm: 'Midfielders',
+      lw: 'Forwards', rw: 'Forwards', cf: 'Forwards', st: 'Forwards',
+    };
+
+    function hashColor(str) {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+      return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
     }
-    loadStats().catch(() => {
-      document.getElementById('statsGrid').innerHTML = '<div class="stats-card"><div class="t-label">Backend offline</div><div class="metric">Unavailable</div><div class="muted">Start the API to populate these cards.</div></div>';
-    });
+
+    function initials(name) {
+      return name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
+    }
+
+    function avatar(name, photoUrl) {
+      if (photoUrl) return `<div class="board-avatar" style="background-image:url('${photoUrl}')"></div>`;
+      return `<div class="board-avatar" style="background:${hashColor(name)}">${initials(name)}</div>`;
+    }
+
+    function formatRands(v) {
+      if (!v) return 'R0';
+      const abs = Math.abs(v);
+      if (abs >= 1e9) return `R${(v / 1e9).toFixed(1)}bn`;
+      if (abs >= 1e6) return `R${(v / 1e6).toFixed(1)}m`;
+      if (abs >= 1e3) return `R${Math.round(v / 1e3)}k`;
+      return `R${v.toLocaleString()}`;
+    }
+
+    function board(title, sub, items) {
+      if (!items.length) {
+        return `
+          <div class="board-card">
+            <div class="board-head"><div class="board-title">${title}</div><div class="board-sub">${sub}</div></div>
+            <p class="note" style="margin-top:0; padding-top:0; border-top:none;">Not enough data yet.</p>
+          </div>`;
+      }
+      return `
+        <div class="board-card">
+          <div class="board-head"><div class="board-title">${title}</div><div class="board-sub">${sub}</div></div>
+          <ul class="board-list">
+            ${items.map((item, i) => `
+              <li class="board-row">
+                <span class="board-rank">${i + 1}</span>
+                ${avatar(item.name, item.photo)}
+                <div class="board-name-block">
+                  <div class="board-name">${item.name}</div>
+                  <div class="board-meta">${item.meta}</div>
+                </div>
+                <span class="board-value">${item.value}</span>
+              </li>
+            `).join('')}
+          </ul>
+        </div>`;
+    }
+
+    async function loadStats() {
+      const ticker = document.getElementById('statTicker');
+      const grid = document.getElementById('boardGrid');
+      try {
+        const [players, teams, standings] = await Promise.all([
+          apiGet('/players/'),
+          apiGet('/teams/'),
+          apiGet('/standings/').catch(() => []),
+        ]);
+
+        if (!players.length && !teams.length) {
+          grid.innerHTML = '<div class="empty-state"><div class="news-head">No data yet</div><p class="news-body">Add teams and players from the admin panel to see league statistics here.</p></div>';
+          return;
+        }
+
+        // ---- league-wide ticker ----
+        const totalGoals = players.reduce((sum, p) => sum + (p.goals || 0), 0);
+        const totalAssists = players.reduce((sum, p) => sum + (p.assists || 0), 0);
+        const avgRating = players.length ? (players.reduce((sum, p) => sum + (p.overall_rating || 0), 0) / players.length) : 0;
+        const totalMarketValue = players.reduce((sum, p) => sum + (p.market_value_rands || 0), 0) + teams.reduce((sum, t) => sum + (t.market_value_rands || 0), 0);
+
+        ticker.innerHTML = [
+          { label: 'Players tracked', value: players.length },
+          { label: 'Clubs', value: teams.length },
+          { label: 'Goals this season', value: totalGoals },
+          { label: 'Assists this season', value: totalAssists },
+          { label: 'Avg player rating', value: avgRating ? avgRating.toFixed(1) : '-' },
+          { label: 'Combined market value', value: formatRands(totalMarketValue) },
+        ].map((s) => `<div class="t-item"><div class="t-value">${s.value}</div><div class="t-label">${s.label}</div></div>`).join('');
+
+        // ---- leaderboards ----
+        const topScorers = [...players].filter((p) => p.goals > 0).sort((a, b) => b.goals - a.goals).slice(0, 5)
+          .map((p) => ({ name: `${p.first_name} ${p.last_name}`, meta: p.team_name || 'Unattached', value: p.goals, photo: p.photo_url }));
+
+        const topAssists = [...players].filter((p) => p.assists > 0).sort((a, b) => b.assists - a.assists).slice(0, 5)
+          .map((p) => ({ name: `${p.first_name} ${p.last_name}`, meta: p.team_name || 'Unattached', value: p.assists, photo: p.photo_url }));
+
+        const bestRated = [...players].filter((p) => p.overall_rating).sort((a, b) => b.overall_rating - a.overall_rating).slice(0, 5)
+          .map((p) => ({ name: `${p.first_name} ${p.last_name}`, meta: (p.playing_position || '').toUpperCase(), value: Number(p.overall_rating).toFixed(1), photo: p.photo_url }));
+
+        const risingTalent = [...players].filter((p) => p.potential_rating).sort((a, b) => (b.potential_rating - (b.overall_rating || 0)) - (a.potential_rating - (a.overall_rating || 0))).slice(0, 5)
+          .map((p) => ({ name: `${p.first_name} ${p.last_name}`, meta: p.team_name || 'Unattached', value: `+${(p.potential_rating - (p.overall_rating || 0)).toFixed(1)}`, photo: p.photo_url }));
+
+        const mostValuablePlayers = [...players].filter((p) => p.market_value_rands).sort((a, b) => b.market_value_rands - a.market_value_rands).slice(0, 5)
+          .map((p) => ({ name: `${p.first_name} ${p.last_name}`, meta: p.team_name || 'Unattached', value: formatRands(p.market_value_rands), photo: p.photo_url }));
+
+        const bestSquads = [...teams].filter((t) => t.average_rating).sort((a, b) => b.average_rating - a.average_rating).slice(0, 5)
+          .map((t) => ({ name: t.name, meta: t.city || t.country || '', value: Number(t.average_rating).toFixed(1), photo: t.logo_url }));
+
+        const richestClubs = [...teams].filter((t) => t.market_value_rands).sort((a, b) => b.market_value_rands - a.market_value_rands).slice(0, 5)
+          .map((t) => ({ name: t.name, meta: t.city || t.country || '', value: formatRands(t.market_value_rands), photo: t.logo_url }));
+
+        const boards = [
+          board('Top scorers', 'Goals this season', topScorers),
+          board('Top assists', 'Assists this season', topAssists),
+          board('Highest rated', 'Overall rating', bestRated),
+          board('Ones to watch', 'Potential minus current rating', risingTalent),
+          board('Most valuable players', 'By market value', mostValuablePlayers),
+          board('Best squads', 'By average squad rating', bestSquads),
+          board('Richest clubs', 'By market value', richestClubs),
+        ];
+
+        if (standings.length) {
+          const table = [...standings].sort((a, b) => a.position - b.position).slice(0, 5)
+            .map((s) => ({ name: s.team.name, meta: `${s.played} played · ${s.wins}W ${s.draws}D ${s.losses}L`, value: `${s.points} pts`, photo: s.team.logo_url }));
+          boards.unshift(board('League leaders', 'Current standings', table));
+        }
+
+        grid.innerHTML = boards.join('');
+
+        // ---- position breakdown ----
+        const groupCounts = {};
+        players.forEach((p) => {
+          const group = POSITION_GROUPS[p.playing_position] || 'Other';
+          groupCounts[group] = (groupCounts[group] || 0) + 1;
+        });
+        const maxGroupCount = Math.max(...Object.values(groupCounts), 1);
+        const order = ['Goalkeepers', 'Defenders', 'Midfielders', 'Forwards', 'Other'];
+        const positionBarsHtml = order.filter((g) => groupCounts[g]).map((group) => `
+          <div class="position-bar-row">
+            <div class="position-bar-label">${group}</div>
+            <div class="position-bar-track"><div class="position-bar-fill" style="width:${(groupCounts[group] / maxGroupCount) * 100}%"></div></div>
+            <div class="position-bar-count">${groupCounts[group]}</div>
+          </div>
+        `).join('');
+        if (positionBarsHtml) {
+          document.getElementById('positionCard').style.display = 'block';
+          document.getElementById('positionBars').innerHTML = positionBarsHtml;
+        }
+      } catch (err) {
+        grid.innerHTML = '<div class="empty-state"><div class="news-head">Backend offline</div><p class="news-body">Start the API with uvicorn main:app --reload to load statistics.</p></div>';
+      }
+    }
+    loadStats();
   </script>
 </body>
 </html>
