@@ -8,6 +8,125 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
+  <style>
+    /* ---- page-local additions, built on top of style.css tokens ---- */
+/* Prevent rating circle from shrinking and cutting numbers */
+.pcard-rating,
+.player-rating,
+.rating-circle {
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    min-width: 52px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+}
+    .players-head{
+      display:flex; align-items:flex-end; justify-content:space-between; gap:24px; flex-wrap:wrap;
+      margin-bottom:28px;
+    }
+    .search-shell{
+      position:relative; width:100%; max-width:340px;
+    }
+    .search-shell svg{
+      position:absolute; left:14px; top:50%; transform:translateY(-50%);
+      width:15px; height:15px; color:var(--ink-soft);
+    }
+    #player-search{
+      width:100%; font-family:var(--sans); font-size:14px; color:var(--ink);
+      background:#fff; border:1px solid var(--line); border-radius:22px;
+      padding:11px 16px 11px 38px; outline:none; transition:border-color .15s, box-shadow .15s;
+    }
+    #player-search:focus{border-color:var(--ink); box-shadow:0 0 0 3px rgba(17,17,17,0.06);}
+    #player-search::placeholder{color:var(--ink-soft);}
+
+    /* breadcrumb / back control shown once a club is open */
+    .back-row{
+      display:flex; align-items:center; gap:10px; margin-bottom:20px;
+      font-family:var(--mono); font-size:12px; letter-spacing:0.5px; text-transform:uppercase;
+    }
+    .back-btn{
+      display:inline-flex; align-items:center; gap:6px; cursor:pointer; color:var(--ink-soft);
+      background:none; border:none; font-family:var(--mono); font-size:12px; letter-spacing:0.5px;
+      text-transform:uppercase; padding:8px 4px;
+    }
+    .back-btn:hover{color:var(--ink);}
+    .back-sep{color:var(--line);}
+    .back-current{color:var(--ink); font-weight:600;}
+
+    .club-open-head{
+      display:flex; align-items:center; gap:16px; margin-bottom:28px;
+    }
+    .club-open-logo{
+      width:56px; height:56px; border-radius:50%; object-fit:contain;
+      background:var(--paper-2); border:1px solid var(--line); flex-shrink:0;
+    }
+    .club-open-name{font-family:var(--display); font-weight:700; font-size:26px;}
+    .club-open-count{font-family:var(--mono); font-size:12px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.5px; margin-top:4px;}
+
+    /* club "folder" picker */
+    .folder-grid{
+      display:grid; grid-template-columns:repeat(auto-fill, minmax(190px, 1fr)); gap:22px;
+    }
+    .club-folder{
+      position:relative; cursor:pointer; background:#fff; border:1px solid var(--line);
+      border-radius:3px 12px 12px 12px; padding:30px 20px 20px; text-align:center;
+      display:flex; flex-direction:column; align-items:center; gap:14px;
+      transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    }
+    .club-folder::before{
+      content:''; position:absolute; top:-13px; left:22px; width:58px; height:15px;
+      background:#fff; border:1px solid var(--line); border-bottom:none; border-radius:6px 6px 0 0;
+    }
+    .club-folder:hover{transform:translateY(-5px); box-shadow:0 16px 30px rgba(17,17,17,0.06); border-color:var(--ink);}
+    .club-folder:hover::before{border-color:var(--ink);}
+    .folder-logo-img{
+      width:64px; height:64px; border-radius:50%; object-fit:contain;
+      background:var(--paper-2); border:1px solid var(--line);
+    }
+    .folder-logo-fallback{
+      width:64px; height:64px; border-radius:50%; color:#fff;
+      display:flex; align-items:center; justify-content:center;
+      font-family:var(--display); font-weight:700; font-size:20px;
+    }
+    .folder-name{font-family:var(--display); font-weight:600; font-size:15px; line-height:1.25;}
+    .folder-count{font-family:var(--mono); font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.5px;}
+
+    /* player card additions */
+    .pcard-top{gap:14px;}
+    .pcard-photo-wrap{flex-shrink:0;}
+    .pcard-photo{
+      width:52px; height:52px; border-radius:50%; object-fit:cover;
+      background:var(--paper-2); border:1px solid var(--line);
+    }
+    .pcard-photo-fallback{
+      width:52px; height:52px; border-radius:50%; color:#fff;
+      display:flex; align-items:center; justify-content:center;
+      font-family:var(--display); font-weight:700; font-size:16px;
+    }
+    .pcard-name-block{display:flex; align-items:center; gap:12px; flex:1; min-width:0;}
+    .pcard-name-block > div{min-width:0; width:100%;}
+    .pcard-name{white-space:normal; overflow-wrap: break-word; text-overflow:unset; max-width:100%; line-height:1.15;}
+    .pcard-role{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;}
+    .pcard-team-tag{
+      font-family:var(--mono); font-size:10.5px; color:var(--green); text-transform:uppercase;
+      letter-spacing:0.5px; margin-top:4px;
+    }
+
+    .stat-row{display:flex; gap:8px; margin-top:14px;}
+    .stat-box{flex:1; background:var(--paper-2); border-radius:8px; padding:10px 6px; text-align:center;}
+    .stat-val{font-family:var(--display); font-weight:700; font-size:17px;}
+    .stat-lab{font-family:var(--mono); font-size:9.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.5px; margin-top:2px;}
+
+    .empty-state{
+      background:#fff; border:1px solid var(--line); border-radius:16px; padding:40px 24px; text-align:center;
+      grid-column:1/-1;
+    }
+    .empty-state .news-head{margin-bottom:8px;}
+  </style>
 </head>
 <body>
   <header class="top">
@@ -26,47 +145,253 @@
       </nav>
     </div>
   </header>
+
   <main class="wrap" style="padding: 60px 24px 80px;">
-    <h2 class="section-title">Player profiles</h2>
-    <p class="section-sub">The league's players, their output and how the VUVA rating model — computed from our own data — sees them.</p>
-    <div class="player-grid" id="player-grid"></div>
+    <div class="players-head">
+      <div>
+        <h2 class="section-title" style="margin-bottom:6px;">Player profiles</h2>
+        <p class="section-sub" style="margin-bottom:0;">Pick a club to see its squad, or search for a player across the league.</p>
+      </div>
+      <div class="search-shell">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="player-search" type="text" placeholder="Search players..." autocomplete="off" />
+      </div>
+    </div>
+
+    <div id="crumb"></div>
+    <div id="content"></div>
   </main>
+
   <script src="api.js"></script>
   <script>
-    function bar(label, val) {
-      return `<div class="skill-row"><div class="skill-label">${label}</div><div class="skill-bar"><div class="skill-fill" style="width:${val}%"></div></div><div class="skill-val">${val}</div></div>`;
+    let teams = [];
+    let players = [];
+    let selectedTeamId = null;
+
+    const contentEl = document.getElementById('content');
+    const crumbEl = document.getElementById('crumb');
+    const searchEl = document.getElementById('player-search');
+
+    function initials(first, last){
+      return `${(first || '?')[0]}${(last || '')[0] || ''}`.toUpperCase();
     }
-    async function loadPlayers() {
-      const grid = document.getElementById('player-grid');
-      try {
-        const players = await apiGet('/players/');
-        if (!players.length) {
-          grid.innerHTML = '<div class="detail-card"><div class="news-head">No players yet</div><p class="news-body">Add players from the admin panel to populate this page.</p></div>';
-          return;
-        }
-        grid.innerHTML = players.map((player) => `
-          <div class="pcard">
-            <div class="pcard-top">
+
+    function hashColor(str){
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+      return `hsl(${Math.abs(hash) % 360}, 45%, 42%)`;
+    }
+
+    function formatRands(v){
+      if (!v) return '—';
+      if (v >= 1000000) return 'R' + (v / 1000000).toFixed(2).replace(/\.00$/, '') + 'm';
+      if (v >= 1000) return 'R' + Math.round(v / 1000) + 'k';
+      return 'R' + v.toLocaleString();
+    }
+
+    function getAge(dob){
+      if (!dob) return null;
+      const d = new Date(dob);
+      if (isNaN(d)) return null;
+      const diffMs = Date.now() - d.getTime();
+      return Math.floor(diffMs / (365.25 * 24 * 3600 * 1000));
+    }
+
+    function playerPhoto(player){
+      if (player.photo_url) {
+        return `<img class="pcard-photo" src="${player.photo_url}" alt="${player.first_name} ${player.last_name}"
+                 onerror="this.outerHTML='<div class=&quot;pcard-photo-fallback&quot; style=&quot;background:${hashColor(player.first_name + player.last_name)}&quot;>${initials(player.first_name, player.last_name)}</div>'">`;
+      }
+      return `<div class="pcard-photo-fallback" style="background:${hashColor(player.first_name + player.last_name)}">${initials(player.first_name, player.last_name)}</div>`;
+    }
+
+    function clubLogo(team){
+      if (team.logo_url) {
+        return `<img class="folder-logo-img" src="${team.logo_url}" alt="${team.name}"
+                 onerror="this.outerHTML='<div class=&quot;folder-logo-fallback&quot; style=&quot;background:${hashColor(team.name)}&quot;>${(team.short_name || team.name).slice(0,3).toUpperCase()}</div>'">`;
+      }
+      return `<div class="folder-logo-fallback" style="background:${hashColor(team.name)}">${(team.short_name || team.name).slice(0,3).toUpperCase()}</div>`;
+    }
+
+    function bar(label, val, max){
+      max = max || 100;
+      const pct = Math.max(0, Math.min(100, (val / max) * 100));
+      const display = Number.isInteger(val) ? val : Math.round(val * 10) / 10;
+      return `<div class="skill-row"><div class="skill-label">${label}</div><div class="skill-bar"><div class="skill-fill" style="width:${pct}%"></div></div><div class="skill-val">${display}</div></div>`;
+    }
+
+    function playerCard(player, opts){
+      const showTeam = opts && opts.showTeam;
+      const age = getAge(player.date_of_birth);
+      return `
+        <div class="pcard">
+          <div class="pcard-top">
+            <div class="pcard-photo-wrap">${playerPhoto(player)}</div>
+            <div class="pcard-name-block">
               <div>
                 <div class="pcard-name">${player.first_name} ${player.last_name}</div>
-                <div class="pcard-role">${player.playing_position.toUpperCase()} — ${player.team_name || 'Unattached'}</div>
+                <div class="pcard-role">${player.playing_position.toUpperCase()}${age ? ' · ' + age : ''}</div>
+                ${showTeam ? `<div class="pcard-team-tag">${player.team_name || 'Unattached'}</div>` : ''}
               </div>
-              <div class="pcard-index">${player.overall_rating || '-'}</div>
             </div>
-            <div class="pcard-body">
-              ${bar('Form', Math.round(player.form_rating || 70))}
-              ${bar('Potential', Math.round(player.potential_rating || 70))}
-              ${bar('Goals', Math.min(99, (player.goals || 0) * 4 + 40))}
-              ${bar('Value', Math.min(99, Math.round((player.market_value_eur || 0) / 150000)))}
-            </div>
-            <div class="pcard-foot"><span>VUVA Index</span><span>Value R${((player.market_value_eur || 0) * 20).toLocaleString()}</span></div>
+            <div class="pcard-index">${player.overall_rating != null ? Math.round(player.overall_rating) : '-'}</div>
           </div>
-        `).join('');
-      } catch (err) {
-        grid.innerHTML = '<div class="detail-card"><div class="news-head">Backend offline</div><p class="news-body">Start the API with uvicorn main:app --reload to load players.</p></div>';
+          <div class="pcard-body">
+            ${bar('Form', player.form_rating != null ? player.form_rating : 7, 10)}
+            ${bar('Potential', player.potential_rating != null ? player.potential_rating : 70, 100)}
+            <div class="stat-row">
+              <div class="stat-box"><div class="stat-val">${player.goals || 0}</div><div class="stat-lab">Goals</div></div>
+              <div class="stat-box"><div class="stat-val">${player.assists || 0}</div><div class="stat-lab">Assists</div></div>
+              <div class="stat-box"><div class="stat-val">${player.minutes_played || 0}</div><div class="stat-lab">Minutes</div></div>
+            </div>
+          </div>
+          <div class="pcard-foot"><span>Market value</span><span>${formatRands(player.market_value_rands)}</span></div>
+        </div>
+      `;
+    }
+
+    function renderPlayerGrid(list, opts){
+      if (!list.length) {
+        contentEl.innerHTML = `
+          <div class="player-grid">
+            <div class="empty-state">
+              <div class="news-head">${opts && opts.emptyTitle ? opts.emptyTitle : 'No players found'}</div>
+              <p class="news-body">${opts && opts.emptyBody ? opts.emptyBody : 'Try a different search term.'}</p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+      contentEl.innerHTML = `<div class="player-grid">${list.map(p => playerCard(p, opts)).join('')}</div>`;
+    }
+
+    function renderFolders(){
+      crumbEl.innerHTML = '';
+      if (!teams.length) {
+        contentEl.innerHTML = `
+          <div class="empty-state">
+            <div class="news-head">No clubs yet</div>
+            <p class="news-body">Add clubs from the admin panel to start building squads.</p>
+          </div>`;
+        return;
+      }
+      contentEl.innerHTML = `
+        <div class="folder-grid">
+          ${teams.map(team => {
+            const count = players.filter(p => p.team_id === team.id).length;
+            return `
+              <div class="club-folder" data-team-id="${team.id}">
+                ${clubLogo(team)}
+                <div>
+                  <div class="folder-name">${team.name}</div>
+                  <div class="folder-count">${count} player${count === 1 ? '' : 's'}</div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+      contentEl.querySelectorAll('.club-folder').forEach(el => {
+        el.addEventListener('click', () => {
+          selectedTeamId = Number(el.dataset.teamId);
+          searchEl.value = '';
+          render();
+        });
+      });
+    }
+
+    function renderClubRoster(query){
+      const team = teams.find(t => t.id === selectedTeamId);
+      if (!team) { selectedTeamId = null; render(); return; }
+
+      crumbEl.innerHTML = `
+        <div class="back-row">
+          <button class="back-btn" id="back-btn">&larr; All clubs</button>
+          <span class="back-sep">/</span>
+          <span class="back-current">${team.name}</span>
+        </div>
+        <div class="club-open-head">
+          ${clubLogo(team).replace('folder-logo-img', 'folder-logo-img club-open-logo').replace('folder-logo-fallback', 'folder-logo-fallback club-open-logo')}
+          <div>
+            <div class="club-open-name">${team.name}</div>
+            <div class="club-open-count">${players.filter(p => p.team_id === team.id).length} player${players.filter(p => p.team_id === team.id).length === 1 ? '' : 's'} in the squad</div>
+          </div>
+        </div>
+      `;
+      document.getElementById('back-btn').addEventListener('click', () => {
+        selectedTeamId = null;
+        searchEl.value = '';
+        render();
+      });
+
+      let roster = players.filter(p => p.team_id === team.id);
+      if (query) {
+        roster = roster.filter(p => matchesQuery(p, query));
+      }
+      renderPlayerGrid(roster, {
+        showTeam: false,
+        emptyTitle: query ? 'No matches in this squad' : 'No players yet',
+        emptyBody: query ? `Nobody in ${team.name} matches "${query}".` : `Add players to ${team.name} from the admin panel.`,
+      });
+    }
+
+    function matchesQuery(p, query){
+      const haystack = [
+        p.first_name, p.last_name, p.nationality, p.playing_position, p.team_name
+      ].filter(Boolean).join(' ').toLowerCase();
+      return haystack.includes(query);
+    }
+
+    function renderGlobalSearch(query){
+      crumbEl.innerHTML = `
+        <div class="back-row">
+          <button class="back-btn" id="back-btn">&larr; All clubs</button>
+          <span class="back-sep">/</span>
+          <span class="back-current">Searching "${query}"</span>
+        </div>
+      `;
+      document.getElementById('back-btn').addEventListener('click', () => {
+        searchEl.value = '';
+        render();
+      });
+      const matches = players.filter(p => matchesQuery(p, query));
+      renderPlayerGrid(matches, {
+        showTeam: true,
+        emptyTitle: 'No players found',
+        emptyBody: `Nobody matches "${query}" across the league.`,
+      });
+    }
+
+    function render(){
+      const query = searchEl.value.trim().toLowerCase();
+      if (selectedTeamId) {
+        renderClubRoster(query);
+      } else if (query) {
+        renderGlobalSearch(query);
+      } else {
+        renderFolders();
       }
     }
-    loadPlayers();
+
+    searchEl.addEventListener('input', render);
+
+    async function init(){
+      contentEl.innerHTML = '<div class="folder-grid"><div class="empty-state">Loading...</div></div>';
+      try {
+        const [teamsRes, playersRes] = await Promise.all([apiGet('/teams/'), apiGet('/players/')]);
+        teams = teamsRes || [];
+        players = playersRes || [];
+        render();
+      } catch (err) {
+        contentEl.innerHTML = `
+          <div class="empty-state">
+            <div class="news-head">Backend offline</div>
+            <p class="news-body">Start the API with uvicorn main:app --reload to load clubs and players.</p>
+          </div>`;
+      }
+    }
+
+    init();
   </script>
 </body>
 </html>

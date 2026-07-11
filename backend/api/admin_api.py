@@ -45,7 +45,7 @@ from schemas.admin import (
     VenueOut,
     VenueUpdate,
 )
-from services.analytics_service import apply_player_metrics, rands_to_eur
+from services.analytics_service import apply_player_metrics
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -70,7 +70,7 @@ def dashboard_overview(db: Session = Depends(get_db)):
         sum(float(player.overall_rating or 0) for player in players) / len(players), 1
     ) if players else 0.0
 
-    top_player = max(players, key=lambda player: player.market_value_eur or 0, default=None)
+    top_player = max(players, key=lambda player: player.market_value_rands or 0, default=None)
     return DashboardSummary(
         total_players=len(players),
         total_teams=len(teams),
@@ -81,7 +81,7 @@ def dashboard_overview(db: Session = Depends(get_db)):
         total_fixtures=len(fixtures),
         total_venues=len(venues),
         average_player_rating=average_player_rating,
-        top_player_value_eur=top_player.market_value_eur or 0 if top_player else 0,
+        top_player_value_rands=top_player.market_value_rands or 0 if top_player else 0,
         top_player_name=(f"{top_player.first_name} {top_player.last_name}" if top_player else None),
     )
 
@@ -149,13 +149,18 @@ def delete_announcement(announcement_id: int, db: Session = Depends(get_db)):
 @router.get("/players", response_model=list[PlayerOut])
 def list_players(db: Session = Depends(get_db)):
     players = db.query(Player).order_by(Player.created_at.desc()).all()
+
     output = []
+
     for player in players:
         team = db.get(Team, player.team_id)
+
         item = PlayerOut.model_validate(player)
         item.team_name = team.name if team else None
-        item.market_value_eur = rands_to_eur(player.market_value_rands)
+        item.market_value_rands = player.market_value_rands
+
         output.append(item)
+
     return output
 
 
@@ -182,7 +187,7 @@ def create_player(payload: PlayerCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(item)
     out = PlayerOut.model_validate(item)
-    out.market_value_eur = rands_to_eur(item.market_value_rands)
+    out.market_value_rands = item.market_value_rands
     return out
 
 
@@ -210,20 +215,22 @@ def update_player(player_id: int, payload: PlayerUpdate, db: Session = Depends(g
     db.commit()
     db.refresh(item)
     out = PlayerOut.model_validate(item)
-    out.market_value_eur = rands_to_eur(item.market_value_rands)
+    out.market_value_rands = item.market_value_rands
     return out
 
 
 @router.get("/teams", response_model=list[TeamOut])
 def list_teams(db: Session = Depends(get_db)):
     teams = db.query(Team).order_by(Team.name.asc()).all()
+
     output = []
+
     for team in teams:
         item = TeamOut.model_validate(team)
-        item.market_value_eur = rands_to_eur(team.market_value_rands)
+        item.market_value_rands = team.market_value_rands
         output.append(item)
-    return output
 
+    return output
 
 @router.post("/teams", response_model=TeamOut, status_code=status.HTTP_201_CREATED)
 def create_team(payload: TeamCreate, db: Session = Depends(get_db)):
@@ -243,7 +250,7 @@ def create_team(payload: TeamCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(item)
     out = TeamOut.model_validate(item)
-    out.market_value_eur = rands_to_eur(item.market_value_rands)
+    out.market_value_rands = item.market_value_rands
     return out
 
 
@@ -266,7 +273,7 @@ def update_team(team_id: int, payload: TeamUpdate, db: Session = Depends(get_db)
     db.commit()
     db.refresh(item)
     out = TeamOut.model_validate(item)
-    out.market_value_eur = rands_to_eur(item.market_value_rands)
+    out.market_value_rands = item.market_value_rands
     return out
 
 @router.get("/competitions", response_model=list[CompetitionOut])

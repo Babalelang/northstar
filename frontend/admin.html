@@ -109,7 +109,7 @@
         <label>Stadium<input name="stadium" /></label>
         <label>Website<input name="website" /></label>
         <label>Founded year<input type="number" name="founded_year" /></label>
-        <label>Market value<input type="number" min="0" name="market_value_eur" /></label>
+        <label>Market value<input type="number" min="0" name="market_value_rands" /></label>
         <label>Average rating<input type="number" step="0.1" min="0" max="99" name="average_rating" /></label>
         <label style="grid-column: 1 / -1;">Logo URL<input name="logo_url" /></label>
         <div class="action-row" style="grid-column: 1 / -1;"><button type="submit">Save team</button><button type="button" class="secondary" id="resetTeam">Reset</button></div>
@@ -316,7 +316,7 @@
           <td>${item.playing_position}</td>
           <td>${item.team_name || item.team_id}</td>
           <td>${item.overall_rating || '-'}</td>
-          <td>${fmtCurrency(item.market_value_eur || 0)}</td>
+          <td>${fmtCurrency(item.market_value_rands || 0)}</td>
           <td><div class="action-row"><button class="secondary" data-action="edit-player" data-id="${item.id}">Edit</button><button class="secondary" data-action="delete-player" data-id="${item.id}">Delete</button></div></td>
         </tr>
       `).join('');
@@ -328,7 +328,7 @@
         <tr>
           <td>${item.name}</td>
           <td>${item.city || '-'}</td>
-          <td>${fmtCurrency(item.market_value_eur || 0)}</td>
+          <td>${fmtCurrency(item.market_value_rands || 0)}</td>
           <td>${item.average_rating || '-'}</td>
           <td><div class="action-row"><button class="secondary" data-action="edit-team" data-id="${item.id}">Edit</button><button class="secondary" data-action="delete-team" data-id="${item.id}">Delete</button></div></td>
         </tr>
@@ -432,7 +432,7 @@
       event.preventDefault();
       const payload = Object.fromEntries(new FormData(teamForm).entries());
       payload.founded_year = Number(payload.founded_year || 0);
-      payload.market_value_eur = Number(payload.market_value_eur || 0);
+      payload.market_value_rands = Number(payload.market_value_rands || 0);
       payload.average_rating = Number(payload.average_rating || 0);
       if (state.editingTeam) {
         await apiPut(`/admin/teams/${state.editingTeam.id}`, payload);

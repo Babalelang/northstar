@@ -72,7 +72,7 @@ class TeamOut(BaseModel):
     logo_url: str | None = None
     website: str | None = None
     founded_year: int | None = None
-    market_value_eur: int | None = None
+    market_value_rands: int | None = None
     average_rating: float | None = None
 
 
@@ -95,7 +95,7 @@ class PlayerOut(BaseModel):
     assists: int = 0
     minutes_played: int = 0
     form_rating: float | None = None
-    market_value_eur: int | None = None
+    market_value_rands: int | None = None
     overall_rating: float | None = None
     potential_rating: float | None = None
 

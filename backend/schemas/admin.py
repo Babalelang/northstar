@@ -65,16 +65,7 @@ class PlayerOut(PlayerBase):
 
     id: int
     team_name: str | None = None
-    market_value_eur: int | None = None  # derived for display only, not stored
-    created_at: datetime
-    updated_at: datetime
-
-
-class PlayerOut(PlayerBase):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    team_name: str | None = None
+    market_value_rands: int | None = None  # derived for display only, not stored
     created_at: datetime
     updated_at: datetime
 
@@ -104,7 +95,7 @@ class TeamOut(TeamBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    market_value_eur: int | None = None  # derived for display only, not stored
+    market_value_rands: int | None = None  # derived for display only, not stored
     created_at: datetime
     updated_at: datetime
 
@@ -268,5 +259,5 @@ class DashboardSummary(BaseModel):
     total_fixtures: int
     total_venues: int
     average_player_rating: float
-    top_player_value_eur: int
+    top_player_value_rands: int
     top_player_name: str | None = None

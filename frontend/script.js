@@ -65,34 +65,34 @@ async function loadNewsAndPlayers() {
           ${bar("Form", Math.round(player.form_rating || 70))}
           ${bar("Potential", Math.round(player.potential_rating || 70))}
           ${bar("Goals", Math.min(99, (player.goals || 0) * 4 + 40))}
-          ${bar("Value", Math.min(99, Math.round((player.market_value_eur || 0) / 150000))) }
+          ${bar("Value", Math.min(99, Math.round((player.market_value_rands || 0) / 150000))) }
         </div>
-        <div class="pcard-foot"><span>VUVA Index</span><span>Value R${((player.market_value_eur || 0) * 20).toLocaleString()}</span></div>
+        <div class="pcard-foot"><span>VUVA Index</span><span>Value R${((player.market_value_rands || 0)).toLocaleString()}</span></div>
       </div>
     `).join("");
 
     const marketValues = players
-      .filter((player) => player.market_value_eur)
-      .sort((a, b) => (b.market_value_eur || 0) - (a.market_value_eur || 0))
+      .filter((player) => player.market_value_rands)
+      .sort((a, b) => (b.market_value_rands || 0) - (a.market_value_rands || 0))
       .slice(0, 8)
       .map((player, index) => ({
         name: `${player.first_name} ${player.last_name}`,
         club: player.team_name || 'Unknown',
         pos: player.playing_position.toUpperCase(),
-        value: (player.market_value_eur || 0) / 1000000,
+        value: (player.market_value_rands || 0) / 1000000,
         rank: index + 1,
       }));
 
     const maxVal = Math.max(...marketValues.map((m) => m.value), 1);
     mvBody.innerHTML = marketValues.map((m) => {
       const pct = Math.round((m.value / maxVal) * 100);
-      return `<tr><td class="rank">${m.rank}</td><td class="name">${m.name}</td><td class="club">${m.club}</td><td class="club">${m.pos}</td><td class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div></td><td class="val">R${(m.value * 20000000).toLocaleString()}</td></tr>`;
+      return `<tr><td class="rank">${m.rank}</td><td class="name">${m.name}</td><td class="club">${m.club}</td><td class="club">${m.pos}</td><td class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div></td><td class="val">R${(m.value * 10000000).toLocaleString()}</td></tr>`;
     }).join("");
 
     const totals = document.querySelectorAll('.mv-stat .mv-num');
     if (totals.length) {
-      totals[0].textContent = `R${(players.reduce((sum, player) => sum + (player.market_value_eur || 0), 0) * 20).toLocaleString()}`;
-      totals[3].textContent = `R${((marketValues[0]?.value || 0) * 20000000).toLocaleString()}`;
+      totals[0].textContent = `R${(players.reduce((sum, player) => sum + (player.market_value_rands || 0), 0) ).toLocaleString()}`;
+      totals[3].textContent = `R${((marketValues[0]?.value || 0) * 10000000).toLocaleString()}`;
     }
   } catch (error) {
     ng.innerHTML = '<div class="news-card"><div class="news-head">Content unavailable</div><div class="news-body">Start the backend to see announcements and player insights.</div></div>';

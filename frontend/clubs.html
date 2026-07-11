@@ -45,18 +45,19 @@
       return name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
     }
 
-    // handles anything from a few thousand up to trillions without turning
-    // into a wall of digits - R12,000,000,000 becomes R12.0bn
-    function formatRand(marketValueEur) {
-      if (marketValueEur === null || marketValueEur === undefined) return null;
-      const rand = marketValueEur * 20;
-      const abs = Math.abs(rand);
-      if (abs >= 1e9) return `R${(rand / 1e9).toFixed(1)}bn`;
-      if (abs >= 1e6) return `R${(rand / 1e6).toFixed(1)}m`;
-      if (abs >= 1e3) return `R${(rand / 1e3).toFixed(0)}k`;
-      return `R${rand.toLocaleString()}`;
-    }
 
+function formatRand(marketValueRands) {
+  if (marketValueRands === null || marketValueRands === undefined) return null;
+
+  const rand = Number(marketValueRands);
+  const abs = Math.abs(rand);
+
+  if (abs >= 1e9) return `R${(rand / 1e9).toFixed(1)}bn`;
+  if (abs >= 1e6) return `R${(rand / 1e6).toFixed(1)}m`;
+  if (abs >= 1e3) return `R${(rand / 1e3).toFixed(0)}k`;
+
+  return `R${rand.toLocaleString('en-ZA')}`;
+}
     function clubLogo(team) {
       if (team.logo_url) {
         return `<img class="club-logo-img" src="${team.logo_url}" alt="${team.name} logo"
@@ -90,7 +91,7 @@
             <ul class="club-stats">
               ${statRow('Stadium', team.stadium)}
               ${statRow('Founded', team.founded_year)}
-              ${statRow('Market value', formatRand(team.market_value_eur))}
+              ${statRow('Market value', formatRand(team.market_value_rands))}
               ${statRow('Squad rating', team.average_rating ? Number(team.average_rating).toFixed(1) : null)}
             </ul>
             ${team.website ? `<a class="club-link" href="${team.website}" target="_blank" rel="noopener">Official site &rarr;</a>` : ''}

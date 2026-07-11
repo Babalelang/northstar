@@ -4,7 +4,6 @@ from typing import Any
 
 # Approximate EUR <-> ZAR rate used only for display conversion.
 # Keep this in one place so admin router and frontend agree.
-EUR_TO_ZAR_RATE = 20.0
 
 
 def _coerce_int(value: Any, default: int = 0) -> int:
@@ -21,14 +20,6 @@ def _coerce_float(value: Any, default: float = 0.0) -> float:
         return default
 
 
-def rands_to_eur(rands: int | None) -> int | None:
-    if not rands:
-        return None
-    return round(rands / EUR_TO_ZAR_RATE)
-
-
-def eur_to_rands(eur: int | float) -> int:
-    return round(eur * EUR_TO_ZAR_RATE)
 
 
 def compute_player_metrics(player: Any) -> dict[str, float | int]:
@@ -69,14 +60,14 @@ def compute_player_metrics(player: Any) -> dict[str, float | int]:
 
     # Base valuation computed in EUR terms, then converted to Rands for storage
     # (Rands is the model's source of truth — see Player.market_value_rands).
-    market_value_eur_base = max(
+    market_value_rands_base = max(
         250_000,
         min(
             15_000_000,
             (overall_rating * 140_000) + (potential_rating * 90_000) + (goals * 180_000) + (assists * 120_000) + (minutes_played / 1800 * 180_000),
         ),
     )
-    market_value_rands = eur_to_rands(market_value_eur_base)
+    market_value_rands = int(market_value_rands_base)
 
     return {
         "overall_rating": overall_rating,
