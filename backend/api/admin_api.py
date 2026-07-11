@@ -45,7 +45,7 @@ from schemas.admin import (
     VenueOut,
     VenueUpdate,
 )
-from services.analytics_service import apply_player_metrics
+from services.analytics_service import apply_player_metrics, rands_to_eur
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -154,6 +154,7 @@ def list_players(db: Session = Depends(get_db)):
         team = db.get(Team, player.team_id)
         item = PlayerOut.model_validate(player)
         item.team_name = team.name if team else None
+        item.market_value_eur = rands_to_eur(player.market_value_rands)
         output.append(item)
     return output
 
@@ -176,11 +177,13 @@ def create_player(payload: PlayerCreate, db: Session = Depends(get_db)):
         minutes_played=payload.minutes_played or 0,
         form_rating=payload.form_rating,
     )
-    apply_player_metrics(item)
+    apply_player_metrics(item, override_rands=payload.market_value_rands)
     db.add(item)
     db.commit()
     db.refresh(item)
-    return PlayerOut.model_validate(item)
+    out = PlayerOut.model_validate(item)
+    out.market_value_eur = rands_to_eur(item.market_value_rands)
+    return out
 
 
 @router.put("/players/{player_id}", response_model=PlayerOut)
@@ -203,25 +206,23 @@ def update_player(player_id: int, payload: PlayerUpdate, db: Session = Depends(g
     item.assists = payload.assists or 0
     item.minutes_played = payload.minutes_played or 0
     item.form_rating = payload.form_rating
-    apply_player_metrics(item)
+    apply_player_metrics(item, override_rands=payload.market_value_rands)
     db.commit()
     db.refresh(item)
-    return PlayerOut.model_validate(item)
-
-
-@router.delete("/players/{player_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_player(player_id: int, db: Session = Depends(get_db)):
-    item = db.get(Player, player_id)
-    if not item:
-        raise HTTPException(status_code=404, detail="Player not found")
-    db.delete(item)
-    db.commit()
-    return None
+    out = PlayerOut.model_validate(item)
+    out.market_value_eur = rands_to_eur(item.market_value_rands)
+    return out
 
 
 @router.get("/teams", response_model=list[TeamOut])
 def list_teams(db: Session = Depends(get_db)):
-    return db.query(Team).order_by(Team.name.asc()).all()
+    teams = db.query(Team).order_by(Team.name.asc()).all()
+    output = []
+    for team in teams:
+        item = TeamOut.model_validate(team)
+        item.market_value_eur = rands_to_eur(team.market_value_rands)
+        output.append(item)
+    return output
 
 
 @router.post("/teams", response_model=TeamOut, status_code=status.HTTP_201_CREATED)
@@ -235,13 +236,15 @@ def create_team(payload: TeamCreate, db: Session = Depends(get_db)):
         logo_url=payload.logo_url,
         website=payload.website,
         founded_year=payload.founded_year,
-        market_value_eur=payload.market_value_eur or 0,
+        market_value_rands=payload.market_value_rands or 0,
         average_rating=payload.average_rating,
     )
     db.add(item)
     db.commit()
     db.refresh(item)
-    return item
+    out = TeamOut.model_validate(item)
+    out.market_value_eur = rands_to_eur(item.market_value_rands)
+    return out
 
 
 @router.put("/teams/{team_id}", response_model=TeamOut)
@@ -258,22 +261,13 @@ def update_team(team_id: int, payload: TeamUpdate, db: Session = Depends(get_db)
     item.logo_url = payload.logo_url
     item.website = payload.website
     item.founded_year = payload.founded_year
-    item.market_value_eur = payload.market_value_eur or 0
+    item.market_value_rands = payload.market_value_rands or 0
     item.average_rating = payload.average_rating
     db.commit()
     db.refresh(item)
-    return item
-
-
-@router.delete("/teams/{team_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_team(team_id: int, db: Session = Depends(get_db)):
-    item = db.get(Team, team_id)
-    if not item:
-        raise HTTPException(status_code=404, detail="Team not found")
-    db.delete(item)
-    db.commit()
-    return None
-
+    out = TeamOut.model_validate(item)
+    out.market_value_eur = rands_to_eur(item.market_value_rands)
+    return out
 
 @router.get("/competitions", response_model=list[CompetitionOut])
 def list_competitions(db: Session = Depends(get_db)):

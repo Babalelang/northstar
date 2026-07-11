@@ -47,7 +47,7 @@ class PlayerBase(BaseModel):
     assists: int | None = None
     minutes_played: int | None = None
     form_rating: float | None = None
-    market_value_eur: int | None = None
+    market_value_rands: int | None = None  # None = auto-calculate; set a value to override
     overall_rating: float | None = None
     potential_rating: float | None = None
 
@@ -58,6 +58,16 @@ class PlayerCreate(PlayerBase):
 
 class PlayerUpdate(PlayerBase):
     pass
+
+
+class PlayerOut(PlayerBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    team_name: str | None = None
+    market_value_eur: int | None = None  # derived for display only, not stored
+    created_at: datetime
+    updated_at: datetime
 
 
 class PlayerOut(PlayerBase):
@@ -78,7 +88,7 @@ class TeamBase(BaseModel):
     logo_url: str | None = None
     website: str | None = None
     founded_year: int | None = None
-    market_value_eur: int | None = None
+    market_value_rands: int | None = None
     average_rating: float | None = None
 
 
@@ -94,9 +104,9 @@ class TeamOut(TeamBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    market_value_eur: int | None = None  # derived for display only, not stored
     created_at: datetime
     updated_at: datetime
-
 
 class CompetitionBase(BaseModel):
     name: str

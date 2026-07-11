@@ -29,23 +29,62 @@
   <main class="wrap" style="padding: 60px 24px 80px;">
     <h2 class="section-title">League coverage</h2>
     <p class="section-sub">More context, less noise — the stories that shape the season.</p>
-    <div class="card-grid">
-      <article class="detail-card">
-        <div class="news-tag">Transfer</div>
-        <div class="news-head">The market is reacting to South Africa’s young stars</div>
-        <p class="news-body">Clubs are using performance data, age profiles and positional flexibility to decide who is worth a premium.</p>
-      </article>
-      <article class="detail-card">
-        <div class="news-tag">Tactics</div>
-        <div class="news-head">Pressing shape is now a title-deciding weapon</div>
-        <p class="news-body">The teams that can recover the ball in the middle third are creating the cleanest chances and forcing the most errors.</p>
-      </article>
-      <article class="detail-card">
-        <div class="news-tag">Development</div>
-        <div class="news-head">Academy players are redefining the league’s ceiling</div>
-        <p class="news-body">More coaches are trusting young players in decisive minutes, and that is changing how clubs are built.</p>
-      </article>
+    <div class="card-grid" id="news-grid">
+      <p class="note">Loading news…</p>
     </div>
   </main>
+  <script src="api.js"></script>
+  <script>
+    const TYPE_LABELS = {
+      transfer: 'Transfer',
+      general: 'General',
+      match: 'Match',
+      weather: 'Weather',
+    };
+
+    function timeAgo(dateStr) {
+      if (!dateStr) return '';
+      const diffMs = Date.now() - new Date(dateStr).getTime();
+      const diffHrs = Math.floor(diffMs / 3600000);
+      if (diffHrs < 1) return 'Just now';
+      if (diffHrs < 24) return `${diffHrs}h ago`;
+      const diffDays = Math.floor(diffHrs / 24);
+      return `${diffDays}d ago`;
+    }
+
+    async function loadNews() {
+      const grid = document.getElementById('news-grid');
+      try {
+        const announcements = await apiGet('/announcements/');
+
+        if (!announcements.length) {
+          grid.innerHTML = '<p class="note">No news yet — check back soon.</p>';
+          return;
+        }
+
+        grid.innerHTML = announcements.map((a) => {
+          const tag = TYPE_LABELS[a.announcement_type] || 'General';
+          const pinned = a.is_pinned ? '<span class="news-pin">Pinned</span>' : '';
+          const summary = a.summary || (a.body ? a.body.slice(0, 160) + '…' : '');
+          const img = a.featured_image_url
+            ? `<img src="${a.featured_image_url}" alt="" class="news-img" />`
+            : '';
+          return `
+            <article class="detail-card">
+              ${img}
+              <div class="news-tag">${tag} ${pinned}</div>
+              <div class="news-head">${a.title}</div>
+              <p class="news-body">${summary}</p>
+              <div class="news-meta">${timeAgo(a.published_at)}</div>
+            </article>
+          `;
+        }).join('');
+      } catch (err) {
+        grid.innerHTML = '<p class="note">Could not reach the VUVA API. Start the backend with uvicorn main:app --reload.</p>';
+      }
+    }
+
+    loadNews();
+  </script>
 </body>
 </html>

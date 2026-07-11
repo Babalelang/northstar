@@ -1,4 +1,4 @@
-from sqlalchemy import Column,DateTime,Enum,Date,Integer,String,Float, ForeignKey
+from sqlalchemy import Column,DateTime,Enum,Date,BigInteger,Integer,String,Float, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database.database import Base
@@ -46,7 +46,7 @@ class Player(Base):
     assists = Column(Integer, nullable=False, default=0)
     minutes_played = Column(Integer, nullable=False, default=0)
     form_rating = Column(Float, nullable=True)
-    market_value_eur = Column(Integer, nullable=True)
+    market_value_rands = Column(BigInteger, nullable=True)
     overall_rating = Column(Float, nullable=True)
     potential_rating = Column(Float, nullable=True)
     #relationships

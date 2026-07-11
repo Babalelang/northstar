@@ -154,6 +154,29 @@ nav.links a.active{
   .card-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:18px; margin-top:24px;}
   .detail-card{background:#fff; border:1px solid var(--line); border-radius:16px; padding:24px; box-shadow:0 10px 30px rgba(17,17,17,0.03);}
 
+  /* CLUB CARDS - fixed max width via auto-fill so a single/few cards stay
+     square-ish instead of stretching to fill the row like auto-fit+1fr does */
+  .club-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 300px)); gap:18px; margin-top:24px;}
+  .club-card{
+    background:#fff; border:1px solid var(--line); border-radius:16px; padding:22px;
+    box-shadow:0 10px 30px rgba(17,17,17,0.03); display:flex; flex-direction:column; gap:16px;
+  }
+  .club-card-top{display:flex; align-items:center; gap:14px;}
+  .club-logo-img{width:52px; height:52px; border-radius:50%; object-fit:contain; background:var(--paper-2); border:1px solid var(--line); flex-shrink:0;}
+  .club-logo-fallback{
+    width:52px; height:52px; border-radius:50%; flex-shrink:0; color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--display); font-weight:700; font-size:17px;
+  }
+  .club-name{font-family:var(--display); font-weight:600; font-size:17px; line-height:1.25;}
+  .club-loc{font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--ink-soft); margin-top:4px;}
+  .club-stats{list-style:none; margin:0; padding:0; border-top:1px solid var(--line); padding-top:14px;}
+  .club-stats li{display:flex; justify-content:space-between; align-items:baseline; font-size:13px; padding:6px 0;}
+  .club-stat-label{color:var(--ink-soft); font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:0.5px;}
+  .club-stat-value{font-weight:600; text-align:right;}
+  .club-link{font-family:var(--mono); font-size:12px; color:var(--green); text-decoration:none; margin-top:-4px;}
+  .club-link:hover{text-decoration:underline;}
+
   footer{border-top:1px solid var(--line); padding:36px 0; margin-top:0;}
   .foot-row{display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--ink-soft); font-family:var(--mono);}
 

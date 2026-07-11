@@ -1,12 +1,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.api import standings_api
+from schemas import public
+from api import standings_api
+from api import admin_api
+from api import teams_api
+from api import players_api
+from api import fixtures_api
+
 from database.database import Base, engine
+
 import models
-from backend.api import admin_api
-from backend.api import teams_api
-from backend.api import players_api
-from backend.api import fixtures_api
 
 app = FastAPI(    
     title = "VUVA API",
@@ -34,6 +37,7 @@ app.include_router(teams_api.router, prefix="/api")
 app.include_router(players_api.router, prefix="/api")
 app.include_router(fixtures_api.router, prefix="/api")
 app.include_router(admin_api.router, prefix="/api")
+app.include_router(public.router)
 
 
 @app.get("/", tags=["Root"])

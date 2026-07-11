@@ -2,6 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
+# Approximate EUR <-> ZAR rate used only for display conversion.
+# Keep this in one place so admin router and frontend agree.
+EUR_TO_ZAR_RATE = 20.0
+
 
 def _coerce_int(value: Any, default: int = 0) -> int:
     try:
@@ -15,6 +19,16 @@ def _coerce_float(value: Any, default: float = 0.0) -> float:
         return float(value)
     except (TypeError, ValueError):
         return default
+
+
+def rands_to_eur(rands: int | None) -> int | None:
+    if not rands:
+        return None
+    return round(rands / EUR_TO_ZAR_RATE)
+
+
+def eur_to_rands(eur: int | float) -> int:
+    return round(eur * EUR_TO_ZAR_RATE)
 
 
 def compute_player_metrics(player: Any) -> dict[str, float | int]:
@@ -52,23 +66,40 @@ def compute_player_metrics(player: Any) -> dict[str, float | int]:
         1,
     )
     potential_rating = round(min(99.0, max(45.0, overall_rating + 3.5 + (position_multiplier * 3.0))), 1)
-    market_value_eur = round(
-        max(250_000, min(15_000_000, (overall_rating * 140_000) + (potential_rating * 90_000) + (goals * 180_000) + (assists * 120_000) + (minutes_played / 1800 * 180_000))),
-        0,
+
+    # Base valuation computed in EUR terms, then converted to Rands for storage
+    # (Rands is the model's source of truth — see Player.market_value_rands).
+    market_value_eur_base = max(
+        250_000,
+        min(
+            15_000_000,
+            (overall_rating * 140_000) + (potential_rating * 90_000) + (goals * 180_000) + (assists * 120_000) + (minutes_played / 1800 * 180_000),
+        ),
     )
+    market_value_rands = eur_to_rands(market_value_eur_base)
 
     return {
         "overall_rating": overall_rating,
         "potential_rating": potential_rating,
         "form_rating": round(form_rating, 1),
-        "market_value_eur": int(market_value_eur),
+        "market_value_rands": int(market_value_rands),
     }
 
 
-def apply_player_metrics(player: Any) -> dict[str, float | int]:
+def apply_player_metrics(player: Any, override_rands: int | None = None) -> dict[str, float | int]:
+    """
+    Recomputes overall/potential/form rating and market value from the player's
+    recorded stats. If `override_rands` is provided (i.e. an admin typed a
+    specific figure into the Market Value field), that figure wins and the
+    auto-calculated valuation is discarded — everything else is still derived
+    normally from goals/assists/minutes/form.
+    """
     metrics = compute_player_metrics(player)
+    if override_rands is not None:
+        metrics["market_value_rands"] = int(override_rands)
+
     setattr(player, "overall_rating", metrics["overall_rating"])
     setattr(player, "potential_rating", metrics["potential_rating"])
     setattr(player, "form_rating", metrics["form_rating"])
-    setattr(player, "market_value_eur", metrics["market_value_eur"])
+    setattr(player, "market_value_rands", metrics["market_value_rands"])
     return metrics

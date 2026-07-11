@@ -49,27 +49,28 @@
         const [players, teams] = await Promise.all([apiGet('/players/'), apiGet('/teams/')]);
 
         const marketValues = players
-          .filter((player) => player.market_value_eur)
-          .sort((a, b) => (b.market_value_eur || 0) - (a.market_value_eur || 0))
-          .map((player, index) => ({
-            name: `${player.first_name} ${player.last_name}`,
-            club: player.team_name || 'Unknown',
-            pos: player.playing_position.toUpperCase(),
-            value: player.market_value_eur || 0,
-            rank: index + 1,
-          }));
+  .filter((player) => player.market_value_rands)
+  .sort((a, b) => (b.market_value_rands || 0) - (a.market_value_rands || 0))
+  .map((player, index) => ({
+    name: `${player.first_name} ${player.last_name}`,
+    club: player.team_name || 'Unknown',
+    pos: player.playing_position.toUpperCase(),
+    valueRands: player.market_value_rands || 0,
+    valueEur: player.market_value_eur || 0,
+    rank: index + 1,
+  }));
 
-        const maxVal = Math.max(...marketValues.map((m) => m.value), 1);
-        mvBody.innerHTML = marketValues.slice(0, 20).map((m) => {
-          const pct = Math.round((m.value / maxVal) * 100);
-          return `<tr><td class="rank">${m.rank}</td><td class="name">${m.name}</td><td class="club">${m.club}</td><td class="club">${m.pos}</td><td class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div></td><td class="val">R${(m.value * 20).toLocaleString()}</td></tr>`;
-        }).join('') || '<tr><td colspan="6" class="note">No player valuations yet — add players in the admin panel.</td></tr>';
+  const maxVal = Math.max(...marketValues.map((m) => m.valueRands), 1);
+  mvBody.innerHTML = marketValues.slice(0, 20).map((m) => {
+  const pct = Math.round((m.valueRands / maxVal) * 100);
+  return `<tr><td class="rank">${m.rank}</td><td class="name">${m.name}</td><td class="club">${m.club}</td><td class="club">${m.pos}</td><td class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div></td><td class="val">R${m.valueRands.toLocaleString()}<br><span style="opacity:.6;font-size:.85em">€${m.valueEur.toLocaleString()}</span></td></tr>`;
+  }).join('') || '<tr><td colspan="6" class="note">No player valuations yet — add players in the admin panel.</td></tr>';
 
-        const totalValue = players.reduce((sum, p) => sum + (p.market_value_eur || 0), 0);
-        document.getElementById('mv-league-total').textContent = `R${(totalValue * 20).toLocaleString()}`;
-        document.getElementById('mv-clubs').textContent = teams.length;
-        document.getElementById('mv-players').textContent = players.length;
-        document.getElementById('mv-top').textContent = marketValues[0] ? `R${(marketValues[0].value * 20).toLocaleString()}` : '-';
+  const totalValue = players.reduce((sum, p) => sum + (p.market_value_rands || 0), 0);
+  document.getElementById('mv-league-total').textContent = `R${totalValue.toLocaleString()}`;
+  document.getElementById('mv-clubs').textContent = teams.length;
+  document.getElementById('mv-players').textContent = players.length;
+  document.getElementById('mv-top').textContent = marketValues[0] ? `R${marketValues[0].valueRands.toLocaleString()}` : '-';
       } catch (err) {
         mvBody.innerHTML = '<tr><td colspan="6" class="note">Could not reach the VUVA API. Start the backend with uvicorn main:app --reload.</td></tr>';
       }

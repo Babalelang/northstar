@@ -1,7 +1,53 @@
 from datetime import date, datetime
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
+from database.database import get_db
 from pydantic import BaseModel, ConfigDict
+from models import Announcement, AnnouncementStatus
+from schemas.admin import AnnouncementOut  # reuse the same shape
 
+router = APIRouter(tags=["Public"])
+
+
+@router.get("/announcements/", response_model=list[AnnouncementOut])
+def list_published_announcements(
+    announcement_type: str | None = None,
+    limit: int = 20,
+    db: Session = Depends(get_db),
+):
+    query = db.query(Announcement).filter(
+        Announcement.status == AnnouncementStatus.PUBLISHED,
+        Announcement.deleted_at.is_(None),
+    )
+    if announcement_type:
+        query = query.filter(Announcement.announcement_type == announcement_type)
+
+    announcements = (
+        query.order_by(
+            Announcement.is_pinned.desc(),
+            Announcement.published_at.desc(),
+        )
+        .limit(limit)
+        .all()
+    )
+    return announcements
+
+
+@router.get("/announcements/{slug}", response_model=AnnouncementOut)
+def get_announcement_by_slug(slug: str, db: Session = Depends(get_db)):
+    item = (
+        db.query(Announcement)
+        .filter(
+            Announcement.slug == slug,
+            Announcement.status == AnnouncementStatus.PUBLISHED,
+            Announcement.deleted_at.is_(None),
+        )
+        .first()
+    )
+    if not item:
+        raise HTTPException(status_code=404, detail="Announcement not found")
+    return item
 
 class VenueOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)

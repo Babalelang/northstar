@@ -27,12 +27,49 @@
     </div>
   </header>
   <main class="wrap" style="padding: 60px 24px 80px;">
-    <h2 class="section-title">Club intelligence</h2>
-    <p class="section-sub">A concise view of every club in our own database, from title contenders to development projects.</p>
-    <div class="card-grid" id="clubs-grid"></div>
+    <h2 class="section-title">Clubs</h2>
+    <p class="section-sub">A concise view of every club</p>
+    <div class="club-grid" id="clubs-grid"></div>
   </main>
   <script src="api.js"></script>
   <script>
+    const AVATAR_COLORS = ['#007A4D', '#FFB612', '#DE3831', '#001489'];
+
+    function avatarColor(name) {
+      let hash = 0;
+      for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+      return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+    }
+
+    function initials(name) {
+      return name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
+    }
+
+    // handles anything from a few thousand up to trillions without turning
+    // into a wall of digits - R12,000,000,000 becomes R12.0bn
+    function formatRand(marketValueEur) {
+      if (marketValueEur === null || marketValueEur === undefined) return null;
+      const rand = marketValueEur * 20;
+      const abs = Math.abs(rand);
+      if (abs >= 1e9) return `R${(rand / 1e9).toFixed(1)}bn`;
+      if (abs >= 1e6) return `R${(rand / 1e6).toFixed(1)}m`;
+      if (abs >= 1e3) return `R${(rand / 1e3).toFixed(0)}k`;
+      return `R${rand.toLocaleString()}`;
+    }
+
+    function clubLogo(team) {
+      if (team.logo_url) {
+        return `<img class="club-logo-img" src="${team.logo_url}" alt="${team.name} logo"
+                  onerror="this.outerHTML = '<div class=\\'club-logo-fallback\\' style=\\'background:${avatarColor(team.name)}\\'>${initials(team.name)}</div>'" />`;
+      }
+      return `<div class="club-logo-fallback" style="background:${avatarColor(team.name)}">${initials(team.name)}</div>`;
+    }
+
+    function statRow(label, value) {
+      if (!value) return '';
+      return `<li><span class="club-stat-label">${label}</span><span class="club-stat-value">${value}</span></li>`;
+    }
+
     async function loadClubs() {
       const grid = document.getElementById('clubs-grid');
       try {
@@ -42,10 +79,21 @@
           return;
         }
         grid.innerHTML = teams.map((team) => `
-          <article class="detail-card">
-            <div class="news-tag">${team.city || team.country || 'Club'}</div>
-            <div class="news-head">${team.name}</div>
-            <p class="news-body">${team.stadium ? 'Plays at ' + team.stadium + '. ' : ''}${team.founded_year ? 'Founded ' + team.founded_year + '. ' : ''}${team.average_rating ? 'Average squad rating ' + team.average_rating + '.' : ''}</p>
+          <article class="club-card">
+            <div class="club-card-top">
+              ${clubLogo(team)}
+              <div>
+                <div class="club-name">${team.name}</div>
+                <div class="club-loc">${[team.city, team.country].filter(Boolean).join(', ') || 'Location unknown'}</div>
+              </div>
+            </div>
+            <ul class="club-stats">
+              ${statRow('Stadium', team.stadium)}
+              ${statRow('Founded', team.founded_year)}
+              ${statRow('Market value', formatRand(team.market_value_eur))}
+              ${statRow('Squad rating', team.average_rating ? Number(team.average_rating).toFixed(1) : null)}
+            </ul>
+            ${team.website ? `<a class="club-link" href="${team.website}" target="_blank" rel="noopener">Official site &rarr;</a>` : ''}
           </article>
         `).join('');
       } catch (err) {

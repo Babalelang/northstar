@@ -1,4 +1,4 @@
-from sqlalchemy import Column,DateTime,Integer,String,Float, ForeignKey
+from sqlalchemy import Column,DateTime,Integer,BigInteger,String,Float, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database.database import Base
@@ -16,7 +16,7 @@ class Team(Base):
     logo_url = Column(String(255))
     website = Column(String(255))
     founded_year = Column(Integer)
-    market_value_eur = Column(Integer, nullable=True)
+    market_value_rands = Column(BigInteger, nullable=True)
     average_rating = Column(Float, nullable=True)
     
     #relationships
@@ -24,8 +24,6 @@ class Team(Base):
     venue = relationship("Venue", back_populates = "teams") # a venue has many teams
     standings = relationship("Standing", back_populates = "team")
     players = relationship("Player", back_populates = "team")
-    # foreign_keys takes the class name as it's actually defined, "Fixture",
-    # not the table name - this was pointing at a class that doesn't exist
     home_fixtures = relationship("Fixture", foreign_keys = "Fixture.home_team_id",back_populates = "home_team",)
     away_fixtures = relationship("Fixture", foreign_keys = "Fixture.away_team_id",back_populates = "away_team",)
     match_statistics = relationship("MatchStatistic",back_populates="team")
