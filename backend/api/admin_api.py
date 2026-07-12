@@ -18,6 +18,8 @@ from models import (
     Standing,
     Team,
     Venue,
+    Coach,
+
 )
 from models.user import User
 from schemas.admin import (
@@ -249,6 +251,18 @@ def create_team(payload: TeamCreate, db: Session = Depends(get_db)):
         average_rating=payload.average_rating,
     )
     db.add(item)
+    db.flush()  # assigns item.id before we attach the coach row
+
+    if payload.coach:
+        item.coach = Coach(
+            first_name=payload.coach.first_name,
+            last_name=payload.coach.last_name,
+            nationality=payload.coach.nationality,
+            date_of_birth=payload.coach.date_of_birth,
+            photo_url=payload.coach.photo_url,
+            appointed_date=payload.coach.appointed_date,
+        )
+
     db.commit()
     db.refresh(item)
     out = TeamOut.model_validate(item)
@@ -272,6 +286,27 @@ def update_team(team_id: int, payload: TeamUpdate, db: Session = Depends(get_db)
     item.founded_year = payload.founded_year
     item.market_value_rands = payload.market_value_rands or 0
     item.average_rating = payload.average_rating
+
+    # blank/omitted coach = leave whoever's already there - same convention
+    # as leaving the password field blank on a user update
+    if payload.coach:
+        if item.coach:
+            item.coach.first_name = payload.coach.first_name
+            item.coach.last_name = payload.coach.last_name
+            item.coach.nationality = payload.coach.nationality
+            item.coach.date_of_birth = payload.coach.date_of_birth
+            item.coach.photo_url = payload.coach.photo_url
+            item.coach.appointed_date = payload.coach.appointed_date
+        else:
+            item.coach = Coach(
+                first_name=payload.coach.first_name,
+                last_name=payload.coach.last_name,
+                nationality=payload.coach.nationality,
+                date_of_birth=payload.coach.date_of_birth,
+                photo_url=payload.coach.photo_url,
+                appointed_date=payload.coach.appointed_date,
+            )
+
     db.commit()
     db.refresh(item)
     out = TeamOut.model_validate(item)
@@ -572,3 +607,4 @@ def delete_fixture(fixture_id: int, db: Session = Depends(get_db)):
     db.delete(item)
     db.commit()
     return None
+

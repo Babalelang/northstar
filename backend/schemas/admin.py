@@ -80,6 +80,7 @@ class TeamBase(BaseModel):
     website: str | None = None
     founded_year: int | None = None
     market_value_rands: int | None = None
+    coach: CoachIn | None = None
     average_rating: float | None = None
 
 
@@ -261,3 +262,24 @@ class DashboardSummary(BaseModel):
     average_player_rating: float
     top_player_value_rands: int
     top_player_name: str | None = None
+
+class CoachIn(BaseModel):
+    """Nested coach payload sent as part of a team create/update."""
+    first_name: str
+    last_name: str
+    nationality: str | None = None
+    date_of_birth: date | None = None
+    photo_url: str | None = None
+    appointed_date: date | None = None
+
+
+class CoachOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    first_name: str
+    last_name: str
+    nationality: str | None = None
+    date_of_birth: date | None = None
+    photo_url: str | None = None
+    appointed_date: date | None = None

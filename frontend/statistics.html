@@ -9,36 +9,161 @@
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
   <style>
-    .stat-ticker{display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); margin-bottom:36px;}
-    .stat-ticker .t-item{background:#fff; padding:20px; text-align:center;}
+    /* ============ STATISTICS — PAGE-LOCAL ADDITIONS ============ */
 
-    .board-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px; margin-bottom:20px;}
-    .board-card{background:#fff; border:1px solid var(--line); border-radius:16px; padding:22px; box-shadow:0 10px 30px rgba(17,17,17,0.03);}
-    .board-head{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px;}
-    .board-title{font-family:var(--display); font-weight:600; font-size:16px;}
-    .board-sub{font-family:var(--mono); font-size:10.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.5px;}
-    .board-list{list-style:none; margin:0; padding:0;}
-    .board-row{display:flex; align-items:center; gap:12px; padding:9px 0; border-bottom:1px solid var(--line);}
-    .board-row:last-child{border-bottom:none;}
-    .board-rank{font-family:var(--mono); font-size:12px; color:var(--ink-soft); width:16px; flex-shrink:0;}
+    /* --- Ticker: colored per stat instead of flat white --- */
+.stat-ticker{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:0;
+    margin-bottom:40px;
+
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:18px;
+    overflow:hidden;
+}
+
+.stat-ticker .t-item{
+    position:relative;
+
+    padding:28px 22px;
+
+    background:#fff;
+
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+
+    transition:
+        background .2s ease,
+        transform .2s ease;
+}
+
+.stat-ticker .t-item:not(:last-child){
+    border-right:1px solid var(--line);
+}
+
+.stat-ticker .t-item:hover{
+    background:#fafafa;
+}
+
+/* Remove all coloured styling */
+
+.stat-ticker .t-item::before{
+    display:none;
+}
+
+.stat-ticker .t-item[data-accent="green"],
+.stat-ticker .t-item[data-accent="gold"],
+.stat-ticker .t-item[data-accent="blue"],
+.stat-ticker .t-item[data-accent="red"]{
+    background:#fff;
+}
+
+/* Number */
+
+.stat-ticker .t-value{
+    font-family:var(--display);
+    font-size:2rem;
+    font-weight:700;
+    line-height:1;
+    letter-spacing:-0.04em;
+    color:var(--ink);
+    margin-bottom:10px;
+}
+
+/* Label */
+
+.stat-ticker .t-label{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    line-height:1.45;
+}
+
+/* Mobile */
+
+@media (max-width:760px){
+
+    .stat-ticker{
+        grid-template-columns:1fr;
+    }
+
+    .stat-ticker .t-item{
+        border-right:none;
+        border-bottom:1px solid var(--line);
+    }
+
+    .stat-ticker .t-item:last-child{
+        border-bottom:none;
+    }
+
+}
+    /* --- Insight strip: short auto-generated read on the data --- */
+    .insight-strip{ display:flex; flex-direction:column; gap:8px; margin-bottom:36px; }
+    .insight-row{
+      display:flex; align-items:center; gap:12px; font-size:13.5px; background:#fff;
+      border:1px solid var(--line); border-left:3px solid var(--green); border-radius:10px; padding:12px 16px;
+    }
+    .insight-row .insight-dot{ width:7px; height:7px; border-radius:50%; background:var(--green); flex-shrink:0; }
+    .insight-row b{ font-weight:600; }
+
+    /* --- Chart cards, shared --- */
+    .chart-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(400px, 1fr)); gap:20px; margin-bottom:20px; }
+    .chart-card{ background:#fff; border:1px solid var(--line); border-radius:16px; padding:24px; box-shadow:0 10px 30px rgba(17,17,17,0.03); }
+    .chart-card.full{ grid-column:1/-1; }
+    .chart-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px; flex-wrap:wrap; gap:6px; }
+    .chart-title{ font-family:var(--display); font-weight:600; font-size:16px; }
+    .chart-sub{ font-family:var(--mono); font-size:10.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.5px; }
+    .chart-svg-wrap{ width:100%; margin-top:10px; }
+    .chart-svg-wrap svg{ width:100%; height:auto; display:block; overflow:visible; }
+    .chart-footnote{
+      font-size:12px; color:var(--ink-soft); line-height:1.6; margin:14px 0 0; padding-top:12px;
+      border-top:1px dashed var(--line);
+    }
+    .chart-legend{ display:flex; flex-wrap:wrap; gap:14px; margin-top:14px; }
+    .chart-legend-item{ display:flex; align-items:center; gap:6px; font-family:var(--mono); font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.4px; }
+    .chart-legend-dot{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+    /* --- Donut --- */
+    .donut-wrap{ display:flex; align-items:center; gap:24px; flex-wrap:wrap; }
+    .donut-center-label{ font-family:var(--display); font-weight:700; }
+
+    /* --- Leaderboards: colored medals for top 3 --- */
+    .board-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px; margin-bottom:20px; }
+    .board-card{ background:#fff; border:1px solid var(--line); border-radius:16px; padding:22px; box-shadow:0 10px 30px rgba(17,17,17,0.03); }
+    .board-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px; }
+    .board-title{ font-family:var(--display); font-weight:600; font-size:16px; }
+    .board-sub{ font-family:var(--mono); font-size:10.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.5px; }
+    .board-list{ list-style:none; margin:0; padding:0; }
+    .board-row{ display:flex; align-items:center; gap:12px; padding:9px 0; border-bottom:1px solid var(--line); }
+    .board-row:last-child{ border-bottom:none; }
+    .board-rank{
+      font-family:var(--mono); font-size:11px; width:20px; height:20px; border-radius:50%; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center; color:var(--ink-soft);
+    }
+    .board-rank.medal-1{ background:var(--gold); color:var(--ink); font-weight:700; }
+    .board-rank.medal-2{ background:var(--blue); color:#fff; font-weight:700; }
+    .board-rank.medal-3{ background:var(--red); color:#fff; font-weight:700; }
     .board-avatar{
       width:32px; height:32px; border-radius:50%; flex-shrink:0; color:#fff; font-size:11px;
       display:flex; align-items:center; justify-content:center; font-family:var(--display); font-weight:700;
       background-size:cover; background-position:center;
     }
-    .board-name-block{min-width:0; flex:1;}
-    .board-name{font-weight:600; font-size:13.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-    .board-meta{font-family:var(--mono); font-size:10.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.4px;}
-    .board-value{font-family:var(--mono); font-weight:700; font-size:14px; flex-shrink:0;}
+    .board-name-block{ min-width:0; flex:1; }
+    .board-name{ font-weight:600; font-size:13.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .board-meta{ font-family:var(--mono); font-size:10.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.4px; }
+    .board-value{ font-family:var(--mono); font-weight:700; font-size:14px; flex-shrink:0; }
 
-    .position-bars{display:flex; flex-direction:column; gap:8px;}
-    .position-bar-row{display:grid; grid-template-columns:44px 1fr 28px; align-items:center; gap:10px; font-size:12px;}
-    .position-bar-label{font-family:var(--mono); color:var(--ink-soft); text-transform:uppercase;}
-    .position-bar-track{height:8px; background:var(--paper-2); border-radius:4px; overflow:hidden;}
-    .position-bar-fill{height:100%; background:var(--green); border-radius:4px;}
-    .position-bar-count{font-family:var(--mono); color:var(--ink-soft); text-align:right;}
+    .empty-state{ background:#fff; border:1px solid var(--line); border-radius:16px; padding:40px 24px; text-align:center; grid-column:1/-1; }
 
-    .empty-state{background:#fff; border:1px solid var(--line); border-radius:16px; padding:40px 24px; text-align:center; grid-column:1/-1;}
+    @media (max-width:760px){
+      .chart-grid{ grid-template-columns:1fr; }
+      .donut-wrap{ flex-direction:column; align-items:flex-start; }
+    }
   </style>
 </head>
 <body>
@@ -54,7 +179,6 @@
         <a href="market.html">Market Value</a>
         <a href="clubs.html">Clubs</a>
         <a href="statistics.html" class="active">Statistics</a>
-        <a href="admin.html">Admin</a>
       </nav>
     </div>
   </header>
@@ -63,38 +187,42 @@
     <p class="section-sub">The season, broken down — top performers, best squads, and where the league's talent sits, all pulled live from our own database.</p>
 
     <div class="stat-ticker" id="statTicker"></div>
+    <div class="insight-strip" id="insightStrip"></div>
+
+    <div class="chart-grid" id="chartGrid"></div>
+
     <div class="board-grid" id="boardGrid"></div>
-    <div class="board-grid" style="grid-template-columns: 1fr;">
-      <div class="board-card" id="positionCard" style="display:none;">
-        <div class="board-head"><div class="board-title">Squad composition</div><div class="board-sub">Players by position</div></div>
-        <div class="position-bars" id="positionBars"></div>
-      </div>
-    </div>
   </main>
+
   <script src="api.js"></script>
   <script>
     const AVATAR_COLORS = ['#007A4D', '#FFB612', '#DE3831', '#001489'];
+
+    // Same position -> color/group mapping used on the market value page,
+    // kept consistent so a color means the same thing site-wide.
     const POSITION_GROUPS = {
-      gk: 'Goalkeepers', cb: 'Defenders', lb: 'Defenders', rb: 'Defenders',
-      cdm: 'Midfielders', cm: 'Midfielders', cam: 'Midfielders', lm: 'Midfielders', rm: 'Midfielders',
-      lw: 'Forwards', rw: 'Forwards', cf: 'Forwards', st: 'Forwards',
+      gk: { group: 'Goalkeepers', color: '#FFB612' },
+      cb: { group: 'Defenders', color: '#001489' }, lb: { group: 'Defenders', color: '#001489' }, rb: { group: 'Defenders', color: '#001489' },
+      cdm: { group: 'Midfielders', color: '#007A4D' }, cm: { group: 'Midfielders', color: '#007A4D' }, cam: { group: 'Midfielders', color: '#007A4D' },
+      lm: { group: 'Midfielders', color: '#007A4D' }, rm: { group: 'Midfielders', color: '#007A4D' },
+      lw: { group: 'Forwards', color: '#DE3831' }, rw: { group: 'Forwards', color: '#DE3831' }, cf: { group: 'Forwards', color: '#DE3831' }, st: { group: 'Forwards', color: '#DE3831' },
     };
+    function posInfo(pos) {
+      return POSITION_GROUPS[(pos || '').toLowerCase()] || { group: 'Other', color: '#55564f' };
+    }
 
     function hashColor(str) {
       let hash = 0;
       for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
       return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
     }
-
     function initials(name) {
       return name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
     }
-
     function avatar(name, photoUrl) {
       if (photoUrl) return `<div class="board-avatar" style="background-image:url('${photoUrl}')"></div>`;
       return `<div class="board-avatar" style="background:${hashColor(name)}">${initials(name)}</div>`;
     }
-
     function formatRands(v) {
       if (!v) return 'R0';
       const abs = Math.abs(v);
@@ -102,6 +230,23 @@
       if (abs >= 1e6) return `R${(v / 1e6).toFixed(1)}m`;
       if (abs >= 1e3) return `R${Math.round(v / 1e3)}k`;
       return `R${v.toLocaleString()}`;
+    }
+    function escapeHtml(str) {
+      return (str || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    // Rounds a value up to a "nice" axis maximum (5, 10, 20, 25, 50, 100...)
+    // so gridlines land on round numbers instead of whatever the raw max is.
+    function niceCeil(value) {
+      if (value <= 0) return 5;
+      const magnitude = Math.pow(10, Math.floor(Math.log10(value)));
+      const residual = value / magnitude;
+      let niceResidual;
+      if (residual > 5) niceResidual = 10;
+      else if (residual > 2) niceResidual = 5;
+      else if (residual > 1) niceResidual = 2;
+      else niceResidual = 1;
+      return niceResidual * magnitude;
     }
 
     function board(title, sub, items) {
@@ -116,24 +261,268 @@
         <div class="board-card">
           <div class="board-head"><div class="board-title">${title}</div><div class="board-sub">${sub}</div></div>
           <ul class="board-list">
-            ${items.map((item, i) => `
+            ${items.map((item, i) => {
+              const rank = i + 1;
+              const medalClass = rank <= 3 ? ` medal-${rank}` : '';
+              return `
               <li class="board-row">
-                <span class="board-rank">${i + 1}</span>
+                <span class="board-rank${medalClass}">${rank}</span>
                 ${avatar(item.name, item.photo)}
                 <div class="board-name-block">
-                  <div class="board-name">${item.name}</div>
-                  <div class="board-meta">${item.meta}</div>
+                  <div class="board-name">${escapeHtml(item.name)}</div>
+                  <div class="board-meta">${escapeHtml(item.meta)}</div>
                 </div>
                 <span class="board-value">${item.value}</span>
               </li>
-            `).join('')}
+            `; }).join('')}
           </ul>
+        </div>`;
+    }
+
+    /* ---------------- CHART: attacking output scatter (goals vs assists) ---------------- */
+    function attackingScatterChart(players) {
+      const pts = players.filter((p) => (p.goals || 0) > 0 || (p.assists || 0) > 0);
+      if (pts.length < 3) {
+        return `
+          <div class="chart-card">
+            <div class="chart-head"><div class="chart-title">Attacking output</div><div class="chart-sub">Goals vs assists</div></div>
+            <p class="note" style="margin-top:0; padding-top:0; border-top:none;">Not enough scoring data yet.</p>
+          </div>`;
+      }
+      const W = 480, H = 300, padL = 40, padR = 16, padT = 16, padB = 34;
+      const maxGoals = niceCeil(Math.max(...pts.map((p) => p.goals || 0)) * 1.1);
+      const maxAssists = niceCeil(Math.max(...pts.map((p) => p.assists || 0)) * 1.1);
+      const xScale = (v) => padL + (v / maxGoals) * (W - padL - padR);
+      const yScale = (v) => (H - padB) - (v / maxAssists) * (H - padB - padT);
+
+      const xTicks = [0, 0.25, 0.5, 0.75, 1].map((f) => Math.round(maxGoals * f));
+      const yTicks = [0, 0.25, 0.5, 0.75, 1].map((f) => Math.round(maxAssists * f));
+
+      const gridlines = yTicks.map((t) => `<line x1="${padL}" x2="${W - padR}" y1="${yScale(t)}" y2="${yScale(t)}" stroke="var(--line)" stroke-width="1" />`).join('')
+        + xTicks.map((t) => `<line x1="${xScale(t)}" x2="${xScale(t)}" y1="${padT}" y2="${H - padB}" stroke="var(--line)" stroke-width="1" />`).join('');
+
+      const yLabels = yTicks.map((t) => `<text x="${padL - 8}" y="${yScale(t) + 3}" text-anchor="end" font-family="var(--mono)" font-size="9" fill="var(--ink-soft)">${t}</text>`).join('');
+      const xLabels = xTicks.map((t) => `<text x="${xScale(t)}" y="${H - padB + 16}" text-anchor="middle" font-family="var(--mono)" font-size="9" fill="var(--ink-soft)">${t}</text>`).join('');
+
+      const dots = pts.map((p) => {
+        const name = `${p.first_name} ${p.last_name}`;
+        const info = posInfo(p.playing_position);
+        return `<circle cx="${xScale(p.goals || 0)}" cy="${yScale(p.assists || 0)}" r="5" fill="${info.color}" fill-opacity="0.82" stroke="#fff" stroke-width="1.4"><title>${escapeHtml(name)} — ${p.goals || 0} goals, ${p.assists || 0} assists</title></circle>`;
+      }).join('');
+
+      const topScorer = [...pts].sort((a, b) => (b.goals || 0) - (a.goals || 0))[0];
+
+      return `
+        <div class="chart-card">
+          <div class="chart-head">
+            <div class="chart-title">Attacking output</div>
+            <div class="chart-sub">Goals (across) vs assists (up)</div>
+          </div>
+          <div class="chart-svg-wrap">
+            <svg viewBox="0 0 ${W} ${H}">
+              ${gridlines}
+              <line x1="${padL}" x2="${W - padR}" y1="${H - padB}" y2="${H - padB}" stroke="var(--ink)" stroke-width="1" />
+              <line x1="${padL}" x2="${padL}" y1="${padT}" y2="${H - padB}" stroke="var(--ink)" stroke-width="1" />
+              ${yLabels}${xLabels}
+              ${dots}
+              <text x="${(W + padL) / 2}" y="${H}" text-anchor="middle" font-family="var(--mono)" font-size="9" fill="var(--ink-soft)" text-transform="uppercase">Goals</text>
+            </svg>
+          </div>
+          <div class="chart-legend">
+            <div class="chart-legend-item"><span class="chart-legend-dot" style="background:#FFB612"></span>GK</div>
+            <div class="chart-legend-item"><span class="chart-legend-dot" style="background:#001489"></span>DEF</div>
+            <div class="chart-legend-item"><span class="chart-legend-dot" style="background:#007A4D"></span>MID</div>
+            <div class="chart-legend-item"><span class="chart-legend-dot" style="background:#DE3831"></span>FWD</div>
+          </div>
+          <p class="chart-footnote">Each dot is a player with at least one goal or assist this season, positioned by goals scored (horizontal) and assists made (vertical); color marks position group. Players toward the upper right combine scoring and creating.${topScorer ? ` <b>${escapeHtml(topScorer.first_name + ' ' + topScorer.last_name)}</b> leads on goals with ${topScorer.goals}.` : ''}</p>
+        </div>`;
+    }
+
+    /* ---------------- CHART: rating distribution histogram ---------------- */
+    function ratingHistogramChart(players) {
+      const rated = players.filter((p) => p.overall_rating);
+      if (rated.length < 3) {
+        return `
+          <div class="chart-card">
+            <div class="chart-head"><div class="chart-title">Squad quality</div><div class="chart-sub">Rating distribution</div></div>
+            <p class="note" style="margin-top:0; padding-top:0; border-top:none;">Not enough rated players yet.</p>
+          </div>`;
+      }
+      const buckets = ['<60', '60s', '70s', '80s', '90+'];
+      const counts = [0, 0, 0, 0, 0];
+      rated.forEach((p) => {
+        const r = Number(p.overall_rating);
+        if (r < 60) counts[0]++;
+        else if (r < 70) counts[1]++;
+        else if (r < 80) counts[2]++;
+        else if (r < 90) counts[3]++;
+        else counts[4]++;
+      });
+      const W = 480, H = 300, padL = 30, padR = 16, padT = 20, padB = 34;
+      const maxCount = Math.max(...counts, 1);
+      const barW = (W - padL - padR) / buckets.length;
+      const yScale = (v) => (H - padB) - (v / maxCount) * (H - padB - padT);
+
+      const bars = buckets.map((label, i) => {
+        const x = padL + i * barW + barW * 0.18;
+        const w = barW * 0.64;
+        const y = yScale(counts[i]);
+        const barColor = ['#DE3831', '#FFB612', '#007A4D', '#007A4D', '#001489'][i];
+        return `
+          <rect x="${x}" y="${y}" width="${w}" height="${(H - padB) - y}" rx="4" fill="${barColor}" fill-opacity="0.85"><title>${label}: ${counts[i]} players</title></rect>
+          <text x="${x + w / 2}" y="${y - 6}" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--ink)">${counts[i]}</text>
+          <text x="${x + w / 2}" y="${H - padB + 16}" text-anchor="middle" font-family="var(--mono)" font-size="9" fill="var(--ink-soft)">${label}</text>
+        `;
+      }).join('');
+
+      const gridlines = [0, 0.5, 1].map((f) => `<line x1="${padL}" x2="${W - padR}" y1="${yScale(maxCount * f)}" y2="${yScale(maxCount * f)}" stroke="var(--line)" stroke-width="1" />`).join('');
+
+      const peakIndex = counts.indexOf(Math.max(...counts));
+
+      return `
+        <div class="chart-card">
+          <div class="chart-head">
+            <div class="chart-title">Squad quality</div>
+            <div class="chart-sub">Players by rating tier</div>
+          </div>
+          <div class="chart-svg-wrap">
+            <svg viewBox="0 0 ${W} ${H}">
+              ${gridlines}
+              <line x1="${padL}" x2="${W - padR}" y1="${H - padB}" y2="${H - padB}" stroke="var(--ink)" stroke-width="1" />
+              ${bars}
+            </svg>
+          </div>
+          <p class="chart-footnote">Every tracked player grouped by overall rating, rounded down to the nearest ten. Most players in this dataset sit in the <b>${buckets[peakIndex]}</b> band — a wide spread across bars means depth across quality tiers rather than a league concentrated at one level.</p>
+        </div>`;
+    }
+
+    /* ---------------- CHART: club value vs rating quadrant ---------------- */
+    function clubQuadrantChart(teams) {
+      const pts = teams.filter((t) => t.average_rating && t.market_value_rands);
+      if (pts.length < 3) {
+        return `
+          <div class="chart-card full">
+            <div class="chart-head"><div class="chart-title">Value vs rating</div><div class="chart-sub">Clubs</div></div>
+            <p class="note" style="margin-top:0; padding-top:0; border-top:none;">Not enough club data yet — needs both average rating and market value set.</p>
+          </div>`;
+      }
+      const W = 900, H = 340, padL = 60, padR = 40, padT = 24, padB = 40;
+      const ratings = pts.map((t) => Number(t.average_rating));
+      const values = pts.map((t) => t.market_value_rands);
+      const minR = Math.floor(Math.min(...ratings) - 2);
+      const maxR = Math.ceil(Math.max(...ratings) + 2);
+      const maxV = niceCeil(Math.max(...values) * 1.1);
+
+      const xScale = (v) => padL + ((v - minR) / (maxR - minR)) * (W - padL - padR);
+      const yScale = (v) => (H - padB) - (v / maxV) * (H - padB - padT);
+
+      const medianRating = [...ratings].sort((a, b) => a - b)[Math.floor(ratings.length / 2)];
+      const medianValue = [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
+
+      const xTicks = Array.from({ length: 5 }, (_, i) => Math.round(minR + ((maxR - minR) * i) / 4));
+      const yTicks = [0, 0.25, 0.5, 0.75, 1].map((f) => Math.round(maxV * f));
+
+      const gridlines = yTicks.map((t) => `<line x1="${padL}" x2="${W - padR}" y1="${yScale(t)}" y2="${yScale(t)}" stroke="var(--line)" stroke-width="1" />`).join('')
+        + xTicks.map((t) => `<line x1="${xScale(t)}" x2="${xScale(t)}" y1="${padT}" y2="${H - padB}" stroke="var(--line)" stroke-width="1" />`).join('');
+
+      const yLabels = yTicks.map((t) => `<text x="${padL - 10}" y="${yScale(t) + 3}" text-anchor="end" font-family="var(--mono)" font-size="9" fill="var(--ink-soft)">${formatRands(t)}</text>`).join('');
+      const xLabels = xTicks.map((t) => `<text x="${xScale(t)}" y="${H - padB + 18}" text-anchor="middle" font-family="var(--mono)" font-size="9" fill="var(--ink-soft)">${t}</text>`).join('');
+
+      const medianLines = `
+        <line x1="${xScale(medianRating)}" x2="${xScale(medianRating)}" y1="${padT}" y2="${H - padB}" stroke="var(--ink-soft)" stroke-width="1" stroke-dasharray="4 4" opacity="0.6" />
+        <line x1="${padL}" x2="${W - padR}" y1="${yScale(medianValue)}" y2="${yScale(medianValue)}" stroke="var(--ink-soft)" stroke-width="1" stroke-dasharray="4 4" opacity="0.6" />
+      `;
+
+      const dots = pts.map((t) => `
+        <circle cx="${xScale(Number(t.average_rating))}" cy="${yScale(t.market_value_rands)}" r="6" fill="var(--green)" fill-opacity="0.82" stroke="#fff" stroke-width="1.5"><title>${escapeHtml(t.name)} — rating ${t.average_rating}, ${formatRands(t.market_value_rands)}</title></circle>
+      `).join('');
+
+      const quadrantLabels = `
+        <text x="${W - padR}" y="${padT + 12}" text-anchor="end" font-family="var(--mono)" font-size="9" fill="var(--ink-soft)" text-transform="uppercase" opacity="0.7">Heavyweights</text>
+        <text x="${padL}" y="${padT + 12}" text-anchor="start" font-family="var(--mono)" font-size="9" fill="var(--ink-soft)" text-transform="uppercase" opacity="0.7">Overvalued</text>
+        <text x="${W - padR}" y="${H - padB - 8}" text-anchor="end" font-family="var(--mono)" font-size="9" fill="var(--ink-soft)" text-transform="uppercase" opacity="0.7">Value picks</text>
+        <text x="${padL}" y="${H - padB - 8}" text-anchor="start" font-family="var(--mono)" font-size="9" fill="var(--ink-soft)" text-transform="uppercase" opacity="0.7">Rebuilding</text>
+      `;
+
+      return `
+        <div class="chart-card full">
+          <div class="chart-head">
+            <div class="chart-title">Value vs rating</div>
+            <div class="chart-sub">Clubs, split at league median</div>
+          </div>
+          <div class="chart-svg-wrap">
+            <svg viewBox="0 0 ${W} ${H}">
+              ${gridlines}
+              <line x1="${padL}" x2="${W - padR}" y1="${H - padB}" y2="${H - padB}" stroke="var(--ink)" stroke-width="1" />
+              <line x1="${padL}" x2="${padL}" y1="${padT}" y2="${H - padB}" stroke="var(--ink)" stroke-width="1" />
+              ${medianLines}
+              ${quadrantLabels}
+              ${yLabels}${xLabels}
+              ${dots}
+            </svg>
+          </div>
+          <p class="chart-footnote">Each dot is a club, plotted by squad average rating (horizontal) against total market value (vertical). Dashed lines mark the league median on each axis. Clubs in the upper right pair top-tier ratings with the biggest valuations; clubs in the lower right carry strong ratings without the price tag yet.</p>
+        </div>`;
+    }
+
+    /* ---------------- CHART: squad composition donut ---------------- */
+    function compositionDonutChart(players) {
+      const groupOrder = ['Goalkeepers', 'Defenders', 'Midfielders', 'Forwards', 'Other'];
+      const groupColors = { Goalkeepers: '#FFB612', Defenders: '#001489', Midfielders: '#007A4D', Forwards: '#DE3831', Other: '#55564f' };
+      const counts = {};
+      players.forEach((p) => {
+        const g = posInfo(p.playing_position).group;
+        counts[g] = (counts[g] || 0) + 1;
+      });
+      const total = players.length;
+      const present = groupOrder.filter((g) => counts[g]);
+      if (!present.length) {
+        return `
+          <div class="chart-card">
+            <div class="chart-head"><div class="chart-title">Squad composition</div><div class="chart-sub">By position</div></div>
+            <p class="note" style="margin-top:0; padding-top:0; border-top:none;">Not enough data yet.</p>
+          </div>`;
+      }
+
+      const size = 160, radius = 62, stroke = 24, circumference = 2 * Math.PI * radius;
+      let cumulative = 0;
+      const arcs = present.map((g) => {
+        const frac = counts[g] / total;
+        const dash = frac * circumference;
+        const gap = circumference - dash;
+        const offset = -cumulative * circumference;
+        cumulative += frac;
+        return `<circle cx="${size / 2}" cy="${size / 2}" r="${radius}" fill="none" stroke="${groupColors[g]}" stroke-width="${stroke}" stroke-dasharray="${dash} ${gap}" stroke-dashoffset="${offset}" transform="rotate(-90 ${size / 2} ${size / 2})"><title>${g}: ${counts[g]} players (${Math.round(frac * 100)}%)</title></circle>`;
+      }).join('');
+
+      const legend = present.map((g) => `
+        <div class="chart-legend-item"><span class="chart-legend-dot" style="background:${groupColors[g]}"></span>${g} — ${counts[g]} (${Math.round((counts[g] / total) * 100)}%)</div>
+      `).join('');
+
+      return `
+        <div class="chart-card">
+          <div class="chart-head">
+            <div class="chart-title">Squad composition</div>
+            <div class="chart-sub">By position group</div>
+          </div>
+          <div class="donut-wrap" style="margin-top:10px;">
+            <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+              ${arcs}
+              <text x="${size / 2}" y="${size / 2 - 4}" text-anchor="middle" class="donut-center-label" font-size="22" fill="var(--ink)">${total}</text>
+              <text x="${size / 2}" y="${size / 2 + 14}" text-anchor="middle" font-family="var(--mono)" font-size="9" fill="var(--ink-soft)" text-transform="uppercase">players</text>
+            </svg>
+            <div class="chart-legend" style="flex-direction:column; gap:8px; margin-top:0;">${legend}</div>
+          </div>
+          <p class="chart-footnote">Share of all tracked players by position group, across every club in the database.</p>
         </div>`;
     }
 
     async function loadStats() {
       const ticker = document.getElementById('statTicker');
-      const grid = document.getElementById('boardGrid');
+      const insightStrip = document.getElementById('insightStrip');
+      const chartGrid = document.getElementById('chartGrid');
+      const boardGrid = document.getElementById('boardGrid');
+
       try {
         const [players, teams, standings] = await Promise.all([
           apiGet('/players/'),
@@ -142,24 +531,45 @@
         ]);
 
         if (!players.length && !teams.length) {
-          grid.innerHTML = '<div class="empty-state"><div class="news-head">No data yet</div><p class="news-body">Add teams and players from the admin panel to see league statistics here.</p></div>';
+          chartGrid.innerHTML = '<div class="empty-state"><div class="news-head">No data yet</div><p class="news-body">Add teams and players from the admin panel to see league statistics here.</p></div>';
           return;
         }
 
-        // ---- league-wide ticker ----
+        // ---- ticker ----
         const totalGoals = players.reduce((sum, p) => sum + (p.goals || 0), 0);
         const totalAssists = players.reduce((sum, p) => sum + (p.assists || 0), 0);
         const avgRating = players.length ? (players.reduce((sum, p) => sum + (p.overall_rating || 0), 0) / players.length) : 0;
         const totalMarketValue = players.reduce((sum, p) => sum + (p.market_value_rands || 0), 0) + teams.reduce((sum, t) => sum + (t.market_value_rands || 0), 0);
 
-        ticker.innerHTML = [
-          { label: 'Players tracked', value: players.length },
-          { label: 'Clubs', value: teams.length },
-          { label: 'Goals this season', value: totalGoals },
-          { label: 'Assists this season', value: totalAssists },
-          { label: 'Avg player rating', value: avgRating ? avgRating.toFixed(1) : '-' },
-          { label: 'Combined market value', value: formatRands(totalMarketValue) },
-        ].map((s) => `<div class="t-item"><div class="t-value">${s.value}</div><div class="t-label">${s.label}</div></div>`).join('');
+        const tickerStats = [
+          { label: 'Players tracked', value: players.length, accent: 'green' },
+          { label: 'Clubs', value: teams.length, accent: 'blue' },
+          { label: 'Goals this season', value: totalGoals, accent: 'gold' },
+          { label: 'Assists this season', value: totalAssists, accent: 'red' },
+          { label: 'Avg player rating', value: avgRating ? avgRating.toFixed(1) : '-', accent: 'green' },
+          { label: 'Combined market value', value: formatRands(totalMarketValue), accent: 'gold' },
+        ];
+        ticker.innerHTML = tickerStats.map((s) => `<div class="t-item" data-accent="${s.accent}"><div class="t-value">${s.value}</div><div class="t-label">${s.label}</div></div>`).join('');
+
+        // ---- insight strip (short, auto-derived reads on the data) ----
+        const insights = [];
+        const topScorer = [...players].filter((p) => p.goals > 0).sort((a, b) => b.goals - a.goals)[0];
+        if (topScorer) insights.push(`<b>${escapeHtml(topScorer.first_name + ' ' + topScorer.last_name)}</b> leads the league with <b>${topScorer.goals} goals</b>${topScorer.team_name ? ` for ${escapeHtml(topScorer.team_name)}` : ''}.`);
+        const richestClub = [...teams].filter((t) => t.market_value_rands).sort((a, b) => b.market_value_rands - a.market_value_rands)[0];
+        if (richestClub) insights.push(`<b>${escapeHtml(richestClub.name)}</b> carries the league's highest squad value at <b>${formatRands(richestClub.market_value_rands)}</b>.`);
+        if (standings.length) {
+          const leader = [...standings].sort((a, b) => a.position - b.position)[0];
+          if (leader) insights.push(`<b>${escapeHtml(leader.team.name)}</b> tops the table with <b>${leader.points} points</b> from ${leader.played} games.`);
+        }
+        insightStrip.innerHTML = insights.map((text) => `<div class="insight-row"><span class="insight-dot"></span><span>${text}</span></div>`).join('');
+
+        // ---- charts ----
+        chartGrid.innerHTML = [
+          attackingScatterChart(players),
+          ratingHistogramChart(players),
+          clubQuadrantChart(teams),
+          compositionDonutChart(players),
+        ].join('');
 
         // ---- leaderboards ----
         const topScorers = [...players].filter((p) => p.goals > 0).sort((a, b) => b.goals - a.goals).slice(0, 5)
@@ -199,29 +609,9 @@
           boards.unshift(board('League leaders', 'Current standings', table));
         }
 
-        grid.innerHTML = boards.join('');
-
-        // ---- position breakdown ----
-        const groupCounts = {};
-        players.forEach((p) => {
-          const group = POSITION_GROUPS[p.playing_position] || 'Other';
-          groupCounts[group] = (groupCounts[group] || 0) + 1;
-        });
-        const maxGroupCount = Math.max(...Object.values(groupCounts), 1);
-        const order = ['Goalkeepers', 'Defenders', 'Midfielders', 'Forwards', 'Other'];
-        const positionBarsHtml = order.filter((g) => groupCounts[g]).map((group) => `
-          <div class="position-bar-row">
-            <div class="position-bar-label">${group}</div>
-            <div class="position-bar-track"><div class="position-bar-fill" style="width:${(groupCounts[group] / maxGroupCount) * 100}%"></div></div>
-            <div class="position-bar-count">${groupCounts[group]}</div>
-          </div>
-        `).join('');
-        if (positionBarsHtml) {
-          document.getElementById('positionCard').style.display = 'block';
-          document.getElementById('positionBars').innerHTML = positionBarsHtml;
-        }
+        boardGrid.innerHTML = boards.join('');
       } catch (err) {
-        grid.innerHTML = '<div class="empty-state"><div class="news-head">Backend offline</div><p class="news-body">Start the API with uvicorn main:app --reload to load statistics.</p></div>';
+        chartGrid.innerHTML = '<div class="empty-state"><div class="news-head">Backend offline</div><p class="news-body">Start the API with uvicorn main:app --reload to load statistics.</p></div>';
       }
     }
     loadStats();

@@ -14,3 +14,4 @@ from .matchstatistic import MatchStatistic
 from .teamstatistic import TeamStatistic
 from .announcement import Announcement, AnnouncementStatus, AnnouncementType
 from .user import User
+from .coach import Coach

@@ -9,18 +9,110 @@
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
   <style>
-    /* page-local additions: style.css defines .detail-card/.news-tag/.news-head/
-       .news-body but never defined these, which the markup below relies on */
+    /* ============ NEWS PAGE — LEAD + GRID ============ */
+
+    /* --- Lead story --- */
+    .news-lead{
+      display:grid; grid-template-columns:1.1fr 1fr; gap:0;
+      background:#fff; border:1px solid var(--line); border-radius:16px;
+      overflow:hidden; box-shadow:0 10px 30px rgba(17,17,17,0.03);
+      margin-bottom:36px; cursor:pointer; transition:box-shadow .15s;
+    }
+    .news-lead:hover{box-shadow:0 14px 36px rgba(17,17,17,0.06);}
+    .news-lead-img{width:100%; height:100%; min-height:280px; object-fit:cover; display:block; background:var(--paper-2);}
+    .news-lead-img.is-empty{
+      display:flex; align-items:center; justify-content:center;
+      font-family:var(--display); font-size:15px; color:var(--ink-soft);
+    }
+    .news-lead-body{padding:36px 40px; display:flex; flex-direction:column; justify-content:center;}
+    .news-lead-tag{
+      font-family:var(--mono); font-size:11px; letter-spacing:1.5px; text-transform:uppercase;
+      color:var(--green); display:flex; align-items:center; gap:8px;
+    }
+    .news-lead-head{
+      font-family:var(--display); font-size:clamp(24px,3vw,34px); font-weight:600;
+      line-height:1.15; margin:14px 0 14px;
+    }
+    .news-lead-excerpt{font-size:15px; color:var(--ink-soft); line-height:1.7; margin:0 0 20px;}
+    .news-readmore{
+      font-family:var(--mono); font-size:12px; letter-spacing:0.5px; text-transform:uppercase;
+      color:var(--ink); background:none; border:none; padding:0; cursor:pointer;
+      display:inline-flex; align-items:center; gap:6px; width:fit-content;
+    }
+    .news-readmore svg{width:13px; height:13px; transition:transform .15s;}
+    .news-lead:hover .news-readmore svg, .news-card:hover .news-readmore svg{transform:translateX(3px);}
+    .news-lead-meta{font-family:var(--mono); font-size:11px; color:var(--ink-soft); margin-top:18px;}
+
+    /* --- Story grid (everything after the lead) --- */
+    .news-section-label{
+      font-family:var(--mono); font-size:11px; letter-spacing:1.5px; text-transform:uppercase;
+      color:var(--ink-soft); margin:0 0 16px; padding-top:8px; border-top:1px solid var(--line);
+    }
+    .news-grid{
+      display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:20px;
+    }
+    .news-card{
+      background:#fff; border:1px solid var(--line); border-radius:16px; overflow:hidden;
+      box-shadow:0 10px 30px rgba(17,17,17,0.03); cursor:pointer; transition:box-shadow .15s;
+      display:flex; flex-direction:column;
+    }
+    .news-card:hover{box-shadow:0 14px 36px rgba(17,17,17,0.06);}
     .news-img{
-      display:block; width:calc(100% + 48px); height:170px; object-fit:cover;
-      margin:-24px -24px 16px; border-radius:16px 16px 0 0;
+      display:block; width:100%; height:150px; object-fit:cover; background:var(--paper-2);
+    }
+    .news-img.is-empty{
+      display:flex; align-items:center; justify-content:center;
+      font-family:var(--display); font-size:13px; color:var(--ink-soft);
+    }
+    .news-card-body{padding:20px 22px 22px; display:flex; flex-direction:column; flex:1;}
+    .news-tag{
+      font-family:var(--mono); font-size:11px; letter-spacing:1px; text-transform:uppercase;
+      color:var(--green); display:flex; align-items:center; gap:8px;
     }
     .news-pin{
       font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:0.5px;
-      background:var(--gold); color:var(--ink); padding:2px 8px; border-radius:10px; margin-left:8px;
+      background:var(--gold); color:var(--ink); padding:2px 8px; border-radius:10px;
     }
+    .news-head{font-family:var(--display); font-size:17px; font-weight:600; margin:10px 0 8px; line-height:1.3;}
+    .news-body{font-size:13.5px; color:var(--ink-soft); line-height:1.65; flex:1; margin:0 0 14px;}
     .news-meta{
-      font-family:var(--mono); font-size:11px; color:var(--ink-soft); margin-top:14px;
+      font-family:var(--mono); font-size:11px; color:var(--ink-soft);
+      display:flex; align-items:center; justify-content:space-between; margin-top:auto;
+    }
+
+    /* --- Read-more modal --- */
+    .news-overlay{
+      display:none; position:fixed; inset:0; z-index:100; background:rgba(17,17,17,0.45);
+      padding:40px 20px; overflow-y:auto;
+    }
+    .news-overlay.is-open{display:flex; justify-content:center; align-items:flex-start;}
+    .news-modal{
+      background:var(--paper); border-radius:16px; max-width:680px; width:100%;
+      margin:auto; box-shadow:0 30px 80px rgba(0,0,0,0.25); position:relative;
+    }
+    .news-modal-close{
+      position:absolute; top:18px; right:18px; width:34px; height:34px; border-radius:50%;
+      background:#fff; border:1px solid var(--line); cursor:pointer;
+      display:flex; align-items:center; justify-content:center; z-index:2;
+    }
+    .news-modal-close svg{width:15px; height:15px;}
+    .news-modal-img{width:100%; height:260px; object-fit:cover; border-radius:16px 16px 0 0; display:block; background:var(--paper-2);}
+    .news-modal-inner{padding:36px 40px 40px;}
+    .news-modal-tag{
+      font-family:var(--mono); font-size:11px; letter-spacing:1.5px; text-transform:uppercase;
+      color:var(--green); display:flex; align-items:center; gap:8px;
+    }
+    .news-modal-head{font-family:var(--display); font-size:clamp(22px,3vw,30px); font-weight:600; line-height:1.2; margin:14px 0 6px;}
+    .news-modal-meta{font-family:var(--mono); font-size:11px; color:var(--ink-soft); margin-bottom:24px;}
+    .news-modal-body p{font-size:15px; color:var(--ink); line-height:1.75; margin:0 0 16px;}
+    .news-modal-body p:last-child{margin-bottom:0;}
+
+    @media (max-width:760px){
+      .news-lead{grid-template-columns:1fr;}
+      .news-lead-img, .news-lead-img.is-empty{min-height:180px;}
+      .news-lead-body{padding:26px 24px;}
+      .news-modal-inner{padding:28px 24px 32px;}
+      .news-modal-img{height:180px;}
     }
   </style>
 </head>
@@ -37,10 +129,10 @@
         <a href="market.html">Market Value</a>
         <a href="clubs.html">Clubs</a>
         <a href="statistics.html">Statistics</a>
-        <a href="admin.html">Admin</a>
       </nav>
     </div>
   </header>
+
   <main class="wrap" style="padding: 60px 24px 80px;">
     <div class="page-head">
       <div>
@@ -52,10 +144,19 @@
         <input id="news-search" type="text" placeholder="Search news..." autocomplete="off" />
       </div>
     </div>
-    <div class="card-grid" id="news-grid">
+
+    <div id="news-lead-slot"></div>
+    <p class="news-section-label" id="news-section-label" style="display:none;">More stories</p>
+    <div id="news-grid">
       <p class="note">Loading news…</p>
     </div>
   </main>
+
+  <!-- Read-more modal -->
+  <div class="news-overlay" id="news-overlay">
+    <div class="news-modal" id="news-modal"></div>
+  </div>
+
   <script src="api.js"></script>
   <script>
     const TYPE_LABELS = {
@@ -75,31 +176,100 @@
       return `${diffDays}d ago`;
     }
 
+    // Simple, safe-ish escaping for text we're inserting into innerHTML.
+    // Announcement bodies come from the admin panel (not arbitrary public
+    // input), but escaping costs nothing and avoids broken markup if a
+    // title/body ever contains "<" or "&".
+    function escapeHtml(str) {
+      return (str || '').replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+      }[c]));
+    }
+
     let allAnnouncements = [];
 
-    function renderNews(announcements) {
+    function excerpt(a, len) {
+      if (a.summary) return a.summary;
+      if (!a.body) return '';
+      return a.body.length > len ? a.body.slice(0, len).trim() + '…' : a.body;
+    }
+
+    function cardMarkup(a) {
+      const tag = TYPE_LABELS[a.announcement_type] || 'General';
+      const pinned = a.is_pinned ? '<span class="news-pin">Pinned</span>' : '';
+      const img = a.featured_image_url
+        ? `<img src="${escapeHtml(a.featured_image_url)}" alt="" class="news-img" />`
+        : `<div class="news-img is-empty">VUVA</div>`;
+      return `
+        <article class="news-card" data-id="${a.id}">
+          ${img}
+          <div class="news-card-body">
+            <div class="news-tag">${tag}${pinned}</div>
+            <div class="news-head">${escapeHtml(a.title)}</div>
+            <p class="news-body">${escapeHtml(excerpt(a, 130))}</p>
+            <div class="news-meta">
+              <span>${timeAgo(a.published_at)}</span>
+              <button class="news-readmore" data-id="${a.id}">Read more
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </button>
+            </div>
+          </div>
+        </article>
+      `;
+    }
+
+    function leadMarkup(a) {
+      const tag = TYPE_LABELS[a.announcement_type] || 'General';
+      const pinned = a.is_pinned ? '<span class="news-pin">Pinned</span>' : '';
+      const img = a.featured_image_url
+        ? `<img src="${escapeHtml(a.featured_image_url)}" alt="" class="news-lead-img" />`
+        : `<div class="news-lead-img is-empty">VUVA</div>`;
+      return `
+        <article class="news-lead" data-id="${a.id}">
+          ${img}
+          <div class="news-lead-body">
+            <div class="news-lead-tag">${tag}${pinned}</div>
+            <h3 class="news-lead-head">${escapeHtml(a.title)}</h3>
+            <p class="news-lead-excerpt">${escapeHtml(excerpt(a, 220))}</p>
+            <button class="news-readmore" data-id="${a.id}">Read more
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+            <div class="news-lead-meta">${timeAgo(a.published_at)}</div>
+          </div>
+        </article>
+      `;
+    }
+
+    function render(announcements, { flat }) {
+      const leadSlot = document.getElementById('news-lead-slot');
       const grid = document.getElementById('news-grid');
+      const sectionLabel = document.getElementById('news-section-label');
+
       if (!announcements.length) {
+        leadSlot.innerHTML = '';
+        sectionLabel.style.display = 'none';
         grid.innerHTML = '<p class="note">No stories match your search.</p>';
         return;
       }
-      grid.innerHTML = announcements.map((a) => {
-        const tag = TYPE_LABELS[a.announcement_type] || 'General';
-        const pinned = a.is_pinned ? '<span class="news-pin">Pinned</span>' : '';
-        const summary = a.summary || (a.body ? a.body.slice(0, 160) + '…' : '');
-        const img = a.featured_image_url
-          ? `<img src="${a.featured_image_url}" alt="" class="news-img" />`
-          : '';
-        return `
-          <article class="detail-card">
-            ${img}
-            <div class="news-tag">${tag}${pinned}</div>
-            <div class="news-head">${a.title}</div>
-            <p class="news-body">${summary}</p>
-            <div class="news-meta">${timeAgo(a.published_at)}</div>
-          </article>
-        `;
-      }).join('');
+
+      // While searching (flat=true) everything sits in one grid, so a
+      // match never hides inside the lead slot where search can't reach it.
+      if (flat) {
+        leadSlot.innerHTML = '';
+        sectionLabel.style.display = 'none';
+        grid.innerHTML = announcements.map(cardMarkup).join('');
+        return;
+      }
+
+      const [lead, ...rest] = announcements;
+      leadSlot.innerHTML = leadMarkup(lead);
+      if (rest.length) {
+        sectionLabel.style.display = 'block';
+        grid.innerHTML = rest.map(cardMarkup).join('');
+      } else {
+        sectionLabel.style.display = 'none';
+        grid.innerHTML = '';
+      }
     }
 
     function matchesQuery(a, query) {
@@ -107,15 +277,77 @@
       return haystack.includes(query);
     }
 
+    function orderForDisplay(list) {
+      // pinned-first, then most recently published — so the lead slot
+      // reliably shows the thing editors actually want up front
+      return [...list].sort((a, b) => {
+        if (!!b.is_pinned !== !!a.is_pinned) return b.is_pinned ? 1 : -1;
+        return new Date(b.published_at || 0) - new Date(a.published_at || 0);
+      });
+    }
+
+    function openModal(id) {
+      const a = allAnnouncements.find((entry) => entry.id === id);
+      if (!a) return;
+      const tag = TYPE_LABELS[a.announcement_type] || 'General';
+      const pinned = a.is_pinned ? '<span class="news-pin">Pinned</span>' : '';
+      const img = a.featured_image_url
+        ? `<img src="${escapeHtml(a.featured_image_url)}" alt="" class="news-modal-img" />`
+        : '';
+      const paragraphs = (a.body || '')
+        .split(/\n+/)
+        .filter(Boolean)
+        .map((p) => `<p>${escapeHtml(p)}</p>`)
+        .join('') || '<p></p>';
+
+      document.getElementById('news-modal').innerHTML = `
+        <button class="news-modal-close" id="news-modal-close" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        ${img}
+        <div class="news-modal-inner">
+          <div class="news-modal-tag">${tag}${pinned}</div>
+          <h2 class="news-modal-head">${escapeHtml(a.title)}</h2>
+          <div class="news-modal-meta">${timeAgo(a.published_at)}</div>
+          <div class="news-modal-body">${paragraphs}</div>
+        </div>
+      `;
+      document.getElementById('news-overlay').classList.add('is-open');
+      document.body.style.overflow = 'hidden';
+      document.getElementById('news-modal-close').addEventListener('click', closeModal);
+    }
+
+    function closeModal() {
+      document.getElementById('news-overlay').classList.remove('is-open');
+      document.body.style.overflow = '';
+    }
+
+    document.getElementById('news-overlay').addEventListener('click', (event) => {
+      if (event.target.id === 'news-overlay') closeModal();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') closeModal();
+    });
+
+    // Clicking anywhere on a card/lead opens it too, not just the button -
+    // bigger, friendlier hit target than a small text link.
+    document.addEventListener('click', (event) => {
+      const trigger = event.target.closest('[data-id]');
+      if (!trigger) return;
+      openModal(Number(trigger.dataset.id));
+    });
+
     async function loadNews() {
       const grid = document.getElementById('news-grid');
       try {
-        allAnnouncements = await apiGet('/announcements/');
+        const data = await apiGet('/announcements/');
+        allAnnouncements = orderForDisplay(data);
         if (!allAnnouncements.length) {
+          document.getElementById('news-lead-slot').innerHTML = '';
           grid.innerHTML = '<p class="note">No news yet — check back soon.</p>';
           return;
         }
-        renderNews(allAnnouncements);
+        render(allAnnouncements, { flat: false });
       } catch (err) {
         grid.innerHTML = '<p class="note">Could not reach the VUVA API. Start the backend with uvicorn main:app --reload.</p>';
       }
@@ -123,7 +355,11 @@
 
     document.getElementById('news-search').addEventListener('input', (event) => {
       const query = event.target.value.trim().toLowerCase();
-      renderNews(query ? allAnnouncements.filter((a) => matchesQuery(a, query)) : allAnnouncements);
+      if (!query) {
+        render(allAnnouncements, { flat: false });
+        return;
+      }
+      render(allAnnouncements.filter((a) => matchesQuery(a, query)), { flat: true });
     });
 
     loadNews();

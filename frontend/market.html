@@ -8,6 +8,241 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
+  <style>
+    /* ============ MARKET VALUE — PAGE-LOCAL ADDITIONS ============ */
+
+    /* --- Hero stats: colored accent + tint per card, was plain white --- */
+.mv-total{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:0;
+    margin-bottom:48px;
+    background:#fff;
+    border:1px solid var(--line);
+    overflow:hidden;
+}
+
+.mv-stat{
+    position:relative;
+    padding:34px 28px;
+    background:#fff;
+    text-align:left;
+    transition:
+        background .25s ease,
+        border-color .25s ease,
+        transform .25s ease;
+}
+
+.mv-stat:not(:last-child){
+    border-right:1px solid var(--line);
+}
+
+.mv-stat:hover{
+    background:#fafafa;
+}
+
+/* Remove the coloured accent line completely */
+.mv-stat::before{
+    display:none;
+}
+
+/* Accent classes are no longer used */
+.mv-stat[data-accent="green"],
+.mv-stat[data-accent="gold"],
+.mv-stat[data-accent="blue"],
+.mv-stat[data-accent="red"]{
+    background:#fff;
+}
+
+/* ---------- Icon ---------- */
+
+.mv-stat-icon{
+    width:18px;
+    height:18px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    margin-bottom:18px;
+
+    color:#666;
+    background:none;
+    border:none;
+}
+
+.mv-stat-icon svg{
+    width:18px;
+    height:18px;
+    stroke-width:1.8;
+}
+
+/* Make every icon identical */
+
+.mv-stat[data-accent="green"] .mv-stat-icon,
+.mv-stat[data-accent="gold"] .mv-stat-icon,
+.mv-stat[data-accent="blue"] .mv-stat-icon,
+.mv-stat[data-accent="red"] .mv-stat-icon{
+    color:#666;
+    background:none;
+}
+
+/* ---------- Number ---------- */
+
+.mv-stat-value{
+    font-family:var(--display);
+    font-size:2.2rem;
+    font-weight:700;
+    letter-spacing:-0.04em;
+    line-height:1.05;
+    color:#111;
+    margin-bottom:10px;
+}
+
+/* ---------- Label ---------- */
+
+.mv-stat-label{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    color:#888;
+}
+
+/* ---------- Mobile ---------- */
+
+@media (max-width:760px){
+
+    .mv-total{
+        grid-template-columns:1fr;
+    }
+
+    .mv-stat{
+        border-right:none;
+        border-bottom:1px solid var(--line);
+    }
+
+    .mv-stat:last-child{
+        border-bottom:none;
+    }
+
+}
+    /* --- Podium --- */
+    .mv-section-label{
+      font-family:var(--mono); font-size:11px; letter-spacing:1.5px; text-transform:uppercase;
+      color:var(--ink-soft); margin:0 0 18px;
+    }
+    .mv-podium{
+      display:flex; align-items:flex-end; gap:18px; margin-bottom:48px;
+    }
+    .podium-card{
+      flex:1; background:#fff; border:1px solid var(--line); border-radius:20px;
+      padding:26px 18px 22px; text-align:center; position:relative; overflow:hidden;
+      opacity:0; transform:translateY(14px); animation:podiumIn .5s ease forwards;
+    }
+    .podium-card.rank-2{ animation-delay:.05s; }
+    .podium-card.rank-1{ animation-delay:.15s; }
+    .podium-card.rank-3{ animation-delay:.05s; }
+    @keyframes podiumIn{ to{ opacity:1; transform:translateY(0); } }
+
+    .podium-card.rank-1{ padding-top:34px; padding-bottom:30px; transform:scale(1.06); z-index:2; box-shadow:0 22px 50px rgba(255,182,18,0.22); border-color:rgba(255,182,18,0.5); }
+    .podium-card.rank-1.settled{ transform:scale(1.06) translateY(0); }
+    .podium-card.rank-2{ box-shadow:0 14px 34px rgba(0,20,137,0.10); }
+    .podium-card.rank-3{ box-shadow:0 14px 34px rgba(222,56,49,0.10); }
+
+    /* decorative squiggle - purely ornamental texture, not a data chart */
+    .podium-wave{ position:absolute; inset:auto 0 0 0; height:64px; opacity:0.5; pointer-events:none; }
+    .rank-1 .podium-wave path{ stroke:var(--gold); }
+    .rank-2 .podium-wave path{ stroke:var(--blue); }
+    .rank-3 .podium-wave path{ stroke:var(--red); }
+
+    .podium-medal{
+      width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+      font-family:var(--display); font-weight:700; font-size:14px; margin:0 auto 14px; position:relative; z-index:1;
+    }
+    .rank-1 .podium-medal{ background:var(--gold); color:var(--ink); }
+    .rank-2 .podium-medal{ background:var(--blue); color:#fff; }
+    .rank-3 .podium-medal{ background:var(--red); color:#fff; }
+
+    .podium-photo{
+      width:64px; height:64px; border-radius:50%; object-fit:cover; margin:0 auto 12px; display:block;
+      background:var(--paper-2); position:relative; z-index:1;
+    }
+    .rank-1 .podium-photo{ width:76px; height:76px; border:3px solid var(--gold); }
+    .rank-2 .podium-photo{ border:3px solid var(--blue); }
+    .rank-3 .podium-photo{ border:3px solid var(--red); }
+    .podium-photo-fallback{
+      display:flex; align-items:center; justify-content:center; color:#fff;
+      font-family:var(--display); font-weight:700; font-size:20px;
+    }
+    .rank-1 .podium-photo-fallback{ background:var(--gold); color:var(--ink); }
+    .rank-2 .podium-photo-fallback{ background:var(--blue); }
+    .rank-3 .podium-photo-fallback{ background:var(--red); }
+
+    .podium-name{ font-family:var(--display); font-weight:600; font-size:15px; position:relative; z-index:1; }
+    .podium-club{ font-family:var(--mono); font-size:10.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.5px; margin-top:4px; position:relative; z-index:1; }
+    .podium-value{ font-family:var(--display); font-weight:700; font-size:22px; margin-top:14px; position:relative; z-index:1; }
+    .rank-1 .podium-value{ font-size:27px; color:#8a6100; }
+    .rank-2 .podium-value{ color:var(--blue); }
+    .rank-3 .podium-value{ color:var(--red); }
+
+    /* --- Value by position chart --- */
+    .mv-distribution{
+      background:#fff; border:1px solid var(--line); border-radius:16px; padding:26px 28px;
+      box-shadow:0 10px 30px rgba(17,17,17,0.03); margin-bottom:40px;
+    }
+    .dist-row{ display:flex; align-items:center; gap:14px; padding:10px 0; }
+    .dist-dot{ width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+    .dist-label{ font-family:var(--mono); font-size:12px; width:100px; flex-shrink:0; color:var(--ink-soft); }
+    .dist-track{ flex:1; height:9px; background:var(--paper-2); border-radius:5px; overflow:hidden; }
+    .dist-fill{ height:100%; border-radius:5px; width:0; transition:width 1s cubic-bezier(.22,.9,.32,1); }
+    .dist-val{ font-family:var(--mono); font-size:12px; width:110px; text-align:right; flex-shrink:0; }
+    .dist-count{ font-family:var(--mono); font-size:10.5px; color:var(--ink-soft); width:70px; text-align:right; flex-shrink:0; }
+
+    /* --- Table: position pills replace the old relative-value bar --- */
+    .pos-pill{
+      display:inline-flex; align-items:center; gap:6px; font-family:var(--mono); font-size:11px;
+      text-transform:uppercase; letter-spacing:0.5px; padding:3px 9px; border-radius:20px;
+    }
+    .pos-pill::before{ content:''; width:6px; height:6px; border-radius:50%; }
+    .pos-pill.pos-gk{ background:rgba(255,182,18,0.16); color:#8a6100; }
+    .pos-pill.pos-gk::before{ background:var(--gold); }
+    .pos-pill.pos-def{ background:rgba(0,20,137,0.08); color:var(--blue); }
+    .pos-pill.pos-def::before{ background:var(--blue); }
+    .pos-pill.pos-mid{ background:rgba(0,122,77,0.09); color:var(--green); }
+    .pos-pill.pos-mid::before{ background:var(--green); }
+    .pos-pill.pos-fwd{ background:rgba(222,56,49,0.09); color:var(--red); }
+    .pos-pill.pos-fwd::before{ background:var(--red); }
+
+    table.mv tbody tr{ transition:background .15s; }
+    table.mv tbody tr:hover td{ background:var(--paper-2); }
+    table.mv td.rank{ font-family:var(--mono); font-weight:600; }
+
+    .mv-table-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px; }
+    .mv-table-head h3{ font-family:var(--display); font-size:18px; font-weight:600; margin:0; }
+    .mv-table-note{ font-family:var(--mono); font-size:11px; color:var(--ink-soft); }
+
+    /* --- Pagination --- */
+    .mv-pagination{ display:flex; align-items:center; justify-content:center; gap:6px; margin-top:22px; flex-wrap:wrap; }
+    .mv-page-btn{
+      font-family:var(--mono); font-size:12px; min-width:32px; height:32px; padding:0 10px;
+      border-radius:16px; border:1px solid var(--line); background:#fff; color:var(--ink-soft);
+      cursor:pointer; transition:background .15s, color .15s, border-color .15s;
+    }
+    .mv-page-btn:hover:not(:disabled){ background:var(--paper-2); color:var(--ink); }
+    .mv-page-btn.active{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+    .mv-page-btn:disabled{ opacity:0.35; cursor:not-allowed; }
+    .mv-page-ellipsis{ font-family:var(--mono); font-size:12px; color:var(--ink-soft); padding:0 2px; }
+
+    @media (max-width:760px){
+      .mv-podium{ flex-direction:column; }
+      .podium-card.rank-1{ transform:none; order:-1; }
+      .mv-total{ grid-template-columns:1fr 1fr; }
+      .dist-label{ width:70px; }
+      .dist-val{ width:90px; }
+      .dist-count{ display:none; }
+    }
+  </style>
 </head>
 <body>
   <header class="top">
@@ -22,59 +257,282 @@
         <a href="market.html" class="active">Market Value</a>
         <a href="clubs.html">Clubs</a>
         <a href="statistics.html">Statistics</a>
-        <a href="admin.html">Admin</a>
       </nav>
     </div>
   </header>
+
   <main class="wrap" style="padding: 60px 24px 80px;">
     <h2 class="section-title">Market value board</h2>
     <p class="section-sub">Valuations generated by the VUVA rating model, driven entirely by each player's own record in our database.</p>
+
     <div class="mv-total">
-      <div class="mv-stat"><div class="mv-num" id="mv-league-total">-</div><div class="mv-lab">League total value</div></div>
-      <div class="mv-stat"><div class="mv-num" id="mv-clubs">-</div><div class="mv-lab">Clubs</div></div>
-      <div class="mv-stat"><div class="mv-num" id="mv-players">-</div><div class="mv-lab">Players tracked</div></div>
-      <div class="mv-stat"><div class="mv-num" id="mv-top">-</div><div class="mv-lab">Top valuation</div></div>
+      <div class="mv-stat" data-accent="green">
+        <div class="mv-stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg></div>
+        <div class="mv-num" id="mv-league-total" data-target="0">-</div>
+        <div class="mv-lab">League total value</div>
+      </div>
+      <div class="mv-stat" data-accent="blue">
+        <div class="mv-stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 3 6v6c0 5 4 8.5 9 10 5-1.5 9-5 9-10V6l-9-4z"/></svg></div>
+        <div class="mv-num" id="mv-clubs" data-target="0">-</div>
+        <div class="mv-lab">Clubs</div>
+      </div>
+      <div class="mv-stat" data-accent="red">
+        <div class="mv-stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></div>
+        <div class="mv-num" id="mv-players" data-target="0">-</div>
+        <div class="mv-lab">Players tracked</div>
+      </div>
+      <div class="mv-stat" data-accent="gold">
+        <div class="mv-stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M6 4h12v3a6 6 0 0 1-12 0V4Z"/><path d="M6 5H3a3 3 0 0 0 3 5M18 5h3a3 3 0 0 1-3 5"/></svg></div>
+        <div class="mv-num" id="mv-top" data-target="0">-</div>
+        <div class="mv-lab">Top valuation</div>
+      </div>
     </div>
-    <table class="mv">
-      <thead><tr><th>#</th><th>Player</th><th>Club</th><th>Position</th><th class="bar-cell">Relative value</th><th style="text-align:right">Value</th></tr></thead>
-      <tbody id="mv-body"></tbody>
-    </table>
+
+    <p class="mv-section-label" id="mv-podium-label" style="display:none;">Top 3</p>
+    <div class="mv-podium" id="mv-podium"></div>
+
+    <div class="mv-distribution" id="mv-distribution" style="display:none;">
+      <p class="mv-section-label" style="margin-bottom:18px;">Value by position</p>
+      <div id="mv-dist-rows"></div>
+    </div>
+
+    <div class="table-card">
+      <div class="mv-table-head">
+        <h3>Full list</h3>
+        <span class="mv-table-note" id="mv-table-note"></span>
+      </div>
+      <table class="mv">
+        <thead><tr><th>#</th><th>Player</th><th>Club</th><th>Position</th><th style="text-align:right">Value</th></tr></thead>
+        <tbody id="mv-body"></tbody>
+      </table>
+    </div>
+    <div class="mv-pagination" id="mv-pagination"></div>
+
     <p class="note">Figures are computed entirely by our own rating model from each player's recorded output (goals, assists, minutes, form) — nothing here is pulled from an outside valuation board.</p>
   </main>
+
   <script src="api.js"></script>
   <script>
+    const PAGE_SIZE = 10;
+    let marketValues = [];
+    let currentPage = 1;
+
+    const POSITION_GROUPS = {
+      gk: { label: 'Goalkeeper', group: 'GK', color: 'var(--gold)', pill: 'pos-gk' },
+      cb: { label: 'Defender', group: 'DEF', color: 'var(--blue)', pill: 'pos-def' },
+      lb: { label: 'Defender', group: 'DEF', color: 'var(--blue)', pill: 'pos-def' },
+      rb: { label: 'Defender', group: 'DEF', color: 'var(--blue)', pill: 'pos-def' },
+      cdm: { label: 'Midfielder', group: 'MID', color: 'var(--green)', pill: 'pos-mid' },
+      cm: { label: 'Midfielder', group: 'MID', color: 'var(--green)', pill: 'pos-mid' },
+      cam: { label: 'Midfielder', group: 'MID', color: 'var(--green)', pill: 'pos-mid' },
+      lm: { label: 'Midfielder', group: 'MID', color: 'var(--green)', pill: 'pos-mid' },
+      rm: { label: 'Midfielder', group: 'MID', color: 'var(--green)', pill: 'pos-mid' },
+      lw: { label: 'Forward', group: 'FWD', color: 'var(--red)', pill: 'pos-fwd' },
+      rw: { label: 'Forward', group: 'FWD', color: 'var(--red)', pill: 'pos-fwd' },
+      cf: { label: 'Forward', group: 'FWD', color: 'var(--red)', pill: 'pos-fwd' },
+      st: { label: 'Forward', group: 'FWD', color: 'var(--red)', pill: 'pos-fwd' },
+    };
+
+    function posInfo(pos) {
+      return POSITION_GROUPS[(pos || '').toLowerCase()] || { group: 'MID', color: 'var(--green)', pill: 'pos-mid' };
+    }
+
+    function fmtRands(n) {
+      return `R${Math.round(n || 0).toLocaleString()}`;
+    }
+
+    function initials(name) {
+      return name.split(' ').filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+    }
+
+    // Counts a stat element up from 0 to its target - small bit of motion
+    // so the summary row doesn't feel like a static spreadsheet header.
+    function animateValue(el, target, formatFn, duration = 900) {
+      const start = performance.now();
+      function tick(now) {
+        const progress = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        el.textContent = formatFn(target * eased);
+        if (progress < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    }
+
+    function waveSvg() {
+      return `
+        <svg class="podium-wave" viewBox="0 0 200 64" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0 40 Q 20 20 40 34 T 80 30 T 120 42 T 160 24 T 200 36" fill="none" stroke-width="2" opacity="0.4"/>
+        </svg>`;
+    }
+
+    function podiumCard(m, rank) {
+      const info = posInfo(m.pos);
+      const photo = m.photoUrl
+        ? `<img src="${m.photoUrl}" alt="" class="podium-photo" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'podium-photo podium-photo-fallback',textContent:'${initials(m.name)}'}))" />`
+        : `<div class="podium-photo podium-photo-fallback">${initials(m.name)}</div>`;
+      return `
+        <div class="podium-card rank-${rank}">
+          ${waveSvg()}
+          <div class="podium-medal">${rank}</div>
+          ${photo}
+          <div class="podium-name">${m.name}</div>
+          <div class="podium-club">${m.club}</div>
+          <div class="podium-value">${fmtRands(m.valueRands)}</div>
+        </div>
+      `;
+    }
+
+    function renderPodium() {
+      const podium = document.getElementById('mv-podium');
+      const label = document.getElementById('mv-podium-label');
+      if (!marketValues.length) { podium.innerHTML = ''; label.style.display = 'none'; return; }
+      label.style.display = 'block';
+      const top3 = marketValues.slice(0, 3);
+      // visual order: 2nd - 1st - 3rd, like a podium
+      const order = [top3[1], top3[0], top3[2]].filter(Boolean);
+      const rankOf = new Map(top3.map((m, i) => [m, i + 1]));
+      podium.innerHTML = order.map((m) => podiumCard(m, rankOf.get(m))).join('');
+    }
+
+    function renderDistribution(players) {
+      const wrap = document.getElementById('mv-distribution');
+      const rows = document.getElementById('mv-dist-rows');
+      const groups = {};
+      players.forEach((p) => {
+        if (!p.market_value_rands) return;
+        const info = posInfo(p.playing_position);
+        if (!groups[info.group]) groups[info.group] = { total: 0, count: 0, color: info.color };
+        groups[info.group].total += p.market_value_rands;
+        groups[info.group].count += 1;
+      });
+      const order = ['GK', 'DEF', 'MID', 'FWD'].filter((g) => groups[g]);
+      if (!order.length) { wrap.style.display = 'none'; return; }
+      wrap.style.display = 'block';
+      const maxAvg = Math.max(...order.map((g) => groups[g].total / groups[g].count), 1);
+
+      rows.innerHTML = order.map((g) => {
+        const avg = groups[g].total / groups[g].count;
+        return `
+          <div class="dist-row">
+            <span class="dist-dot" style="background:${groups[g].color}"></span>
+            <span class="dist-label">${g}</span>
+            <div class="dist-track"><div class="dist-fill" data-width="${(avg / maxAvg) * 100}" style="background:${groups[g].color}"></div></div>
+            <span class="dist-val">${fmtRands(avg)} avg</span>
+            <span class="dist-count">${groups[g].count} players</span>
+          </div>
+        `;
+      }).join('');
+
+      // trigger the width transition on the next frame rather than at
+      // width:0 -> so the fill animates in instead of appearing instantly
+      requestAnimationFrame(() => {
+        rows.querySelectorAll('.dist-fill').forEach((el) => {
+          el.style.width = el.dataset.width + '%';
+        });
+      });
+    }
+
+    function getPageNumbers(current, total) {
+      if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+      const pages = new Set([1, total, current, current - 1, current + 1]);
+      return Array.from(pages).filter((p) => p >= 1 && p <= total).sort((a, b) => a - b);
+    }
+
+    function renderPagination(rest) {
+      const el = document.getElementById('mv-pagination');
+      const totalPages = Math.max(1, Math.ceil(rest.length / PAGE_SIZE));
+      if (totalPages <= 1) { el.innerHTML = ''; return; }
+
+      const pages = getPageNumbers(currentPage, totalPages);
+      let html = `<button class="mv-page-btn" data-page="${currentPage - 1}" ${currentPage === 1 ? 'disabled' : ''}>Prev</button>`;
+      let prev = 0;
+      pages.forEach((p) => {
+        if (p - prev > 1) html += `<span class="mv-page-ellipsis">···</span>`;
+        html += `<button class="mv-page-btn ${p === currentPage ? 'active' : ''}" data-page="${p}">${p}</button>`;
+        prev = p;
+      });
+      html += `<button class="mv-page-btn" data-page="${currentPage + 1}" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>`;
+      el.innerHTML = html;
+
+      el.querySelectorAll('.mv-page-btn[data-page]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const page = Number(btn.dataset.page);
+          if (page < 1 || page > totalPages) return;
+          currentPage = page;
+          renderTable();
+        });
+      });
+    }
+
+    function renderTable() {
+      const body = document.getElementById('mv-body');
+      const note = document.getElementById('mv-table-note');
+      const rest = marketValues.slice(3); // top 3 already shown on the podium
+
+      if (!rest.length) {
+        body.innerHTML = marketValues.length
+          ? '<tr><td colspan="5" class="note">Everything tracked is already shown in the podium above.</td></tr>'
+          : '<tr><td colspan="5" class="note">No player valuations yet — add players in the admin panel.</td></tr>';
+        note.textContent = '';
+        renderPagination(rest);
+        return;
+      }
+
+      const totalPages = Math.max(1, Math.ceil(rest.length / PAGE_SIZE));
+      currentPage = Math.min(currentPage, totalPages);
+      const start = (currentPage - 1) * PAGE_SIZE;
+      const pageItems = rest.slice(start, start + PAGE_SIZE);
+
+      note.textContent = `Showing ${start + 4}–${start + pageItems.length + 3} of ${marketValues.length}`;
+
+      body.innerHTML = pageItems.map((m) => {
+        const info = posInfo(m.pos);
+        return `
+          <tr>
+            <td class="rank">${m.rank}</td>
+            <td class="name">${m.name}</td>
+            <td class="club">${m.club}</td>
+            <td><span class="pos-pill ${info.pill}">${m.pos}</span></td>
+            <td class="val" style="text-align:right">${fmtRands(m.valueRands)}</td>
+          </tr>
+        `;
+      }).join('');
+
+      renderPagination(rest);
+    }
+
     async function loadMarket() {
       const mvBody = document.getElementById('mv-body');
       try {
         const [players, teams] = await Promise.all([apiGet('/players/'), apiGet('/teams/')]);
 
-        const marketValues = players
-  .filter((player) => player.market_value_rands)
-  .sort((a, b) => (b.market_value_rands || 0) - (a.market_value_rands || 0))
-  .map((player, index) => ({
-    name: `${player.first_name} ${player.last_name}`,
-    club: player.team_name || 'Unknown',
-    pos: player.playing_position.toUpperCase(),
-    valueRands: player.market_value_rands || 0,
-    valueEur: player.market_value_rands || 0,
-    rank: index + 1,
-  }));
+        marketValues = players
+          .filter((player) => player.market_value_rands)
+          .sort((a, b) => (b.market_value_rands || 0) - (a.market_value_rands || 0))
+          .map((player, index) => ({
+            name: `${player.first_name} ${player.last_name}`,
+            club: player.team_name || 'Unknown',
+            pos: (player.playing_position || '').toUpperCase(),
+            valueRands: player.market_value_rands || 0,
+            photoUrl: player.photo_url || '',
+            rank: index + 1,
+          }));
 
-  const maxVal = Math.max(...marketValues.map((m) => m.valueRands), 1);
-  mvBody.innerHTML = marketValues.slice(0, 20).map((m) => {
-  const pct = Math.round((m.valueRands / maxVal) * 100);
-  return `<tr><td class="rank">${m.rank}</td><td class="name">${m.name}</td><td class="club">${m.club}</td><td class="club">${m.pos}</td><td class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div></td><td class="val">R${m.valueRands.toLocaleString()}<br><span style="opacity:.6;font-size:.85em">€${m.valueEur.toLocaleString()}</span></td></tr>`;
-  }).join('') || '<tr><td colspan="6" class="note">No player valuations yet — add players in the admin panel.</td></tr>';
+        renderPodium();
+        renderDistribution(players);
+        currentPage = 1;
+        renderTable();
 
-  const totalValue = players.reduce((sum, p) => sum + (p.market_value_rands || 0), 0);
-  document.getElementById('mv-league-total').textContent = `R${totalValue.toLocaleString()}`;
-  document.getElementById('mv-clubs').textContent = teams.length;
-  document.getElementById('mv-players').textContent = players.length;
-  document.getElementById('mv-top').textContent = marketValues[0] ? `R${marketValues[0].valueRands.toLocaleString()}` : '-';
+        const totalValue = players.reduce((sum, p) => sum + (p.market_value_rands || 0), 0);
+        animateValue(document.getElementById('mv-league-total'), totalValue, fmtRands);
+        animateValue(document.getElementById('mv-clubs'), teams.length, (v) => Math.round(v).toString());
+        animateValue(document.getElementById('mv-players'), players.length, (v) => Math.round(v).toString());
+        animateValue(document.getElementById('mv-top'), marketValues[0]?.valueRands || 0, fmtRands);
       } catch (err) {
-        mvBody.innerHTML = '<tr><td colspan="6" class="note">Could not reach the VUVA API. Start the backend with uvicorn main:app --reload.</td></tr>';
+        mvBody.innerHTML = '<tr><td colspan="5" class="note">Could not reach the VUVA API. Start the backend with uvicorn main:app --reload.</td></tr>';
       }
     }
+
     loadMarket();
   </script>
 </body>

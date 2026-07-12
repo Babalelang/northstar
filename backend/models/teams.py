@@ -29,7 +29,7 @@ class Team(Base):
     match_statistics = relationship("MatchStatistic",back_populates="team")
     team_statistics = relationship("TeamStatistic",back_populates="team")
     match_events = relationship("MatchEvent",back_populates="team")
-    
+    coach = relationship("Coach", back_populates="team", uselist=False) 
     #audit logs
     created_at = Column(DateTime(timezone = True),
                         server_default = func.now(),
