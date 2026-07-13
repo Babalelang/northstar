@@ -77,17 +77,19 @@ def compute_player_metrics(player: Any) -> dict[str, float | int]:
     }
 
 
-def apply_player_metrics(player: Any, override_rands: int | None = None) -> dict[str, float | int]:
+def apply_player_metrics(player: Any, override_rands: int | None = None, override_overall: float | None = None) -> dict[str, float | int]:
     """
     Recomputes overall/potential/form rating and market value from the player's
-    recorded stats. If `override_rands` is provided (i.e. an admin typed a
-    specific figure into the Market Value field), that figure wins and the
-    auto-calculated valuation is discarded — everything else is still derived
-    normally from goals/assists/minutes/form.
+    recorded stats. If `override_rands` is provided, that figure wins for market value.
+    If `override_overall` is provided, that figure wins for overall rating.
     """
     metrics = compute_player_metrics(player)
     if override_rands is not None:
         metrics["market_value_rands"] = int(override_rands)
+    if override_overall is not None:
+        metrics["overall_rating"] = float(override_overall)
+        # Also recalculate potential based on the overridden overall
+        metrics["potential_rating"] = min(99.0, max(45.0, metrics["overall_rating"] + 3.5))
 
     setattr(player, "overall_rating", metrics["overall_rating"])
     setattr(player, "potential_rating", metrics["potential_rating"])

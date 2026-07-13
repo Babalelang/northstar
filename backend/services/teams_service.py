@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 
 from models.teams import Team
+from services.players_service import PlayersService
 
 
 class TeamsService:
@@ -18,6 +19,10 @@ class TeamsService:
     @staticmethod
     def get_by_id(db: Session, team_id: int):
         return db.get(Team, team_id)
+
+    @staticmethod
+    def get_captain(db: Session, team_id: int):
+        return PlayersService.get_captain(db, team_id)
 
     @staticmethod
     def create(db: Session, team: Team):

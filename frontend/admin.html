@@ -20,6 +20,7 @@
     .form-grid { display: grid; grid-template-columns: repeat(2, minmax(220px, 1fr)); gap: 14px; }
     .form-grid label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--ink-soft); }
     input, select, textarea, button { font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); }
+    select { background: #fff; }
     textarea { min-height: 96px; resize: vertical; }
     button { cursor: pointer; background: var(--ink); color: var(--paper); border: none; }
     .table-wrap { overflow-x: auto; }
@@ -27,10 +28,13 @@
     th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); font-size: 13px; }
     th { font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-soft); }
     .pill { display: inline-block; padding: 4px 10px; border-radius: 999px; background: var(--paper-2); font-size: 12px; }
+    .pill.pill-captain { background: var(--ink); color: var(--paper); font-weight: 600; margin-left: 6px; }
     .muted { color: var(--ink-soft); font-size: 12px; }
     .action-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
     .secondary { background: var(--paper-2); color: var(--ink); border: 1px solid var(--line); }
-    @media (max-width: 760px) { .form-grid { grid-template-columns: 1fr; } }
+    .field-group { grid-column: 1 / -1; border: 1px dashed var(--line); border-radius: 12px; padding: 14px 16px; display: grid; grid-template-columns: repeat(2, minmax(220px, 1fr)); gap: 14px; }
+    .field-group-label { grid-column: 1 / -1; font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); margin: -4px 0 -2px; }
+    @media (max-width: 760px) { .form-grid, .field-group { grid-template-columns: 1fr; } }
 
     /* checkboxes were inheriting .form-grid label's flex-direction:column,
        which stacked the box above the text instead of sitting beside it */
@@ -50,6 +54,13 @@
     .user-badge { display: flex; align-items: center; gap: 12px; margin-left: auto; }
     .user-badge .pill { text-transform: capitalize; }
     .navbar { flex-wrap: wrap; }
+
+    /* LIST TOOLBAR (search) + PAGINATION - new, used on the Players list */
+    .list-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+    .list-toolbar input[type="search"] { flex: 1; min-width: 220px; }
+    .list-toolbar .muted { white-space: nowrap; }
+    .pagination { display: flex; align-items: center; gap: 12px; margin-top: 16px; justify-content: flex-end; flex-wrap: wrap; }
+    .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
   </style>
 </head>
 <body>
@@ -123,18 +134,43 @@
         <label>Nationality<input name="nationality" required /></label>
         <label>Position<select name="playing_position"><option value="gk">GK</option><option value="cb">CB</option><option value="lb">LB</option><option value="rb">RB</option><option value="cdm">CDM</option><option value="cm">CM</option><option value="cam">CAM</option><option value="lm">LM</option><option value="rm">RM</option><option value="lw">LW</option><option value="rw">RW</option><option value="cf">CF</option><option value="st">ST</option></select></label>
         <label>Date of birth<input type="date" name="date_of_birth" required /></label>
-        <label>Team id<input type="number" name="team_id" required /></label>
+        <label>Team<select name="team_id" required data-options="teams"><option value="">Select team…</option></select></label>
         <label>Goals<input type="number" min="0" name="goals" value="0" /></label>
         <label>Assists<input type="number" min="0" name="assists" value="0" /></label>
         <label>Minutes<input type="number" min="0" name="minutes_played" value="0" /></label>
         <label>Form rating<input type="number" step="0.1" min="0" max="99" name="form_rating" value="70" /></label>
         <label>Photo URL<input name="photo_url" /></label>
-        <label>Height (cm)<input type="number" name="height_cm" /></label>
+        <label>Height (cm)<input type="number" min="0" name="height_cm" /></label>
         <label>Preferred foot<select name="preferred_foot"><option value="">None</option><option value="left">Left</option><option value="right">Right</option><option value="both">Both</option></select></label>
-        <label>Shirt number<input type="number" name="club_shirt_number" /></label>
+        <label>Shirt number<input type="number" min="0" max="99" name="club_shirt_number" /></label>
+        <label>Overall rating<input type="number" step="0.1" min="0" max="99" name="overall_rating" /></label>
+        <label>Potential rating<input type="number" step="0.1" min="0" max="99" name="potential_rating" /></label>
+        <label>Market value override (R)<input type="number" min="0" name="market_value_rands" placeholder="Leave blank to auto-calculate" /></label>
+        <label class="checkbox-label"><input type="checkbox" name="is_captain" /> Team captain</label>
+
+        <div class="field-group">
+          <div class="field-group-label">Goalkeeper stats (optional)</div>
+          <label>Saves<input type="number" min="0" name="saves" /></label>
+          <label>Clean sheets<input type="number" min="0" name="clean_sheets" /></label>
+          <label>Goals conceded<input type="number" min="0" name="goals_conceded" /></label>
+        </div>
+
+        <div class="field-group">
+          <div class="field-group-label">Defensive stats (optional)</div>
+          <label>Tackles<input type="number" min="0" name="tackles" /></label>
+          <label>Interceptions<input type="number" min="0" name="interceptions" /></label>
+          <label>Clearances<input type="number" min="0" name="clearances" /></label>
+        </div>
+
         <div class="action-row" style="grid-column: 1 / -1;"><button type="submit">Save player</button><button type="button" class="secondary" id="resetPlayer">Reset</button></div>
       </form>
-      <div class="table-wrap" style="margin-top: 20px;"><table><thead><tr><th>Name</th><th>Position</th><th>Team</th><th>Rating</th><th>Value</th><th>Actions</th></tr></thead><tbody id="playerTable"></tbody></table></div>
+
+      <div class="list-toolbar" style="margin-top: 20px;">
+        <input type="search" id="playerSearch" placeholder="Search by name, nationality, team or position…" />
+        <span class="muted" id="playerResultCount"></span>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>Name</th><th>Position</th><th>Team</th><th>Rating</th><th>Value</th><th>Actions</th></tr></thead><tbody id="playerTable"></tbody></table></div>
+      <div class="pagination" id="playerPagination"></div>
     </section>
 
     <section class="admin-card" data-panel="teams">
@@ -146,13 +182,25 @@
         <label>Country<input name="country" /></label>
         <label>Stadium<input name="stadium" /></label>
         <label>Website<input name="website" /></label>
-        <label>Founded year<input type="number" name="founded_year" /></label>
+        <label>Founded year<input type="number" min="1800" max="2100" name="founded_year" /></label>
         <label>Market value<input type="number" min="0" name="market_value_rands" /></label>
         <label>Average rating<input type="number" step="0.1" min="0" max="99" name="average_rating" /></label>
         <label style="grid-column: 1 / -1;">Logo URL<input name="logo_url" /></label>
+
+        <div class="field-group">
+          <div class="field-group-label">Coach (optional — leave blank to keep whoever's already set)</div>
+          <label>First name<input name="coach_first_name" /></label>
+          <label>Last name<input name="coach_last_name" /></label>
+          <label>Nationality<input name="coach_nationality" /></label>
+          <label>Appointed<input type="date" name="coach_appointed_date" /></label>
+          <label style="grid-column: 1 / -1;">Photo URL<input name="coach_photo_url" /></label>
+        </div>
+
+        <p class="muted" style="grid-column: 1 / -1; margin: -4px 0 0;">Captain is set from the Players tab (tick "Team captain" on a player) — it isn't editable here.</p>
+
         <div class="action-row" style="grid-column: 1 / -1;"><button type="submit">Save team</button><button type="button" class="secondary" id="resetTeam">Reset</button></div>
       </form>
-      <div class="table-wrap" style="margin-top: 20px;"><table><thead><tr><th>Name</th><th>City</th><th>Market value</th><th>Average rating</th><th>Actions</th></tr></thead><tbody id="teamTable"></tbody></table></div>
+      <div class="table-wrap" style="margin-top: 20px;"><table><thead><tr><th>Name</th><th>City</th><th>Coach</th><th>Captain</th><th>Market value</th><th>Average rating</th><th>Actions</th></tr></thead><tbody id="teamTable"></tbody></table></div>
     </section>
 
     <section class="admin-card" data-panel="competitions">
@@ -163,7 +211,7 @@
         <label>Code<input name="code" required /></label>
         <label>Country<input name="country" required /></label>
         <label>Governing body<input name="governing_body" /></label>
-        <label>Tier<input type="number" name="tier" /></label>
+        <label>Tier<input type="number" min="0" name="tier" /></label>
         <label>Competition type<input name="competition_type" value="league" /></label>
         <label class="checkbox-label"><input type="checkbox" name="is_active" checked /> Active</label>
         <label style="grid-column: 1 / -1;">Logo URL<input name="logo_url" /></label>
@@ -176,7 +224,7 @@
       <h3 class="section-title" style="font-size: 24px;">Seasons</h3>
       <form id="seasonForm" class="form-grid">
         <label>Label<input name="label" required /></label>
-        <label>Competition id<input type="number" name="competition_id" required /></label>
+        <label>Competition<select name="competition_id" required data-options="competitions"><option value="">Select competition…</option></select></label>
         <label>Start date<input type="date" name="start_date" /></label>
         <label>End date<input type="date" name="end_date" /></label>
         <label class="checkbox-label"><input type="checkbox" name="is_current" /> Current season</label>
@@ -212,13 +260,13 @@
           <option value="postponed">Postponed</option>
           <option value="cancelled">Cancelled</option>
         </select></label>
-        <label>Home team id<input type="number" name="home_team_id" required /></label>
-        <label>Away team id<input type="number" name="away_team_id" required /></label>
+        <label>Home team<select name="home_team_id" required data-options="teams"><option value="">Select team…</option></select></label>
+        <label>Away team<select name="away_team_id" required data-options="teams"><option value="">Select team…</option></select></label>
         <label>Home score<input type="number" min="0" name="home_score" value="0" /></label>
         <label>Away score<input type="number" min="0" name="away_score" value="0" /></label>
-        <label>Venue id<input type="number" name="venue_id" required /></label>
-        <label>Season id<input type="number" name="season_id" required /></label>
-        <label>Competition id<input type="number" name="competition_id" required /></label>
+        <label>Venue<select name="venue_id" required data-options="venues"><option value="">Select venue…</option></select></label>
+        <label>Season<select name="season_id" required data-options="seasons"><option value="">Select season…</option></select></label>
+        <label>Competition<select name="competition_id" required data-options="competitions"><option value="">Select competition…</option></select></label>
         <label>Matchweek<input type="number" min="0" name="matchweek" /></label>
         <label>Round name<input name="round_name" /></label>
         <label>Referee<input name="referee" /></label>
@@ -235,17 +283,17 @@
     <section class="admin-card" data-panel="standings">
       <h3 class="section-title" style="font-size: 24px;">Standings</h3>
       <form id="standingForm" class="form-grid">
-        <label>Position<input type="number" name="position" required /></label>
-        <label>Team id<input type="number" name="team_id" required /></label>
-        <label>Season id<input type="number" name="season_id" required /></label>
-        <label>Competition id<input type="number" name="competition_id" required /></label>
+        <label>Position<input type="number" min="1" name="position" required /></label>
+        <label>Team<select name="team_id" required data-options="teams"><option value="">Select team…</option></select></label>
+        <label>Season<select name="season_id" required data-options="seasons"><option value="">Select season…</option></select></label>
+        <label>Competition<select name="competition_id" required data-options="competitions"><option value="">Select competition…</option></select></label>
         <label>Played<input type="number" min="0" name="played" value="0" /></label>
         <label>Wins<input type="number" min="0" name="wins" value="0" /></label>
         <label>Draws<input type="number" min="0" name="draws" value="0" /></label>
         <label>Losses<input type="number" min="0" name="losses" value="0" /></label>
         <label>Goals for<input type="number" min="0" name="goals_for" value="0" /></label>
         <label>Goals against<input type="number" min="0" name="goals_against" value="0" /></label>
-        <label>Goal difference<input type="number" name="goal_difference" value="0" /></label>
+        <label>Goal difference<input type="number" name="goal_difference" value="0" data-allow-negative="true" /></label>
         <label>Points<input type="number" min="0" name="points" value="0" /></label>
         <label>Form<input name="form" /></label>
         <div class="action-row" style="grid-column: 1 / -1;"><button type="submit">Save standing</button><button type="button" class="secondary" id="resetStanding">Reset</button></div>
@@ -315,7 +363,11 @@
       clearSession();
       showLoginScreen();
     });
-    const state = { announcements: [], players: [], teams: [], competitions: [], seasons: [], venues: [], fixtures: [], standings: [], users: [], editingAnnouncement: null, editingPlayer: null, editingTeam: null, editingCompetition: null, editingSeason: null, editingVenue: null, editingFixture: null, editingStanding: null, editingUser: null };
+
+    // playerSearch / playerPage drive the client-side search + pagination
+    // on the Players list; PLAYER_PAGE_SIZE controls rows per page.
+    const PLAYER_PAGE_SIZE = 10;
+    const state = { announcements: [], players: [], teams: [], competitions: [], seasons: [], venues: [], fixtures: [], standings: [], users: [], editingAnnouncement: null, editingPlayer: null, editingTeam: null, editingCompetition: null, editingSeason: null, editingVenue: null, editingFixture: null, editingStanding: null, editingUser: null, playerSearch: '', playerPage: 1 };
 
     const summaryGrid = document.getElementById('summaryGrid');
     const announcementForm = document.getElementById('announcementForm');
@@ -327,6 +379,118 @@
     const fixtureForm = document.getElementById('fixtureForm');
     const standingForm = document.getElementById('standingForm');
     const userForm = document.getElementById('userForm');
+
+    // maps every edit-* action to the form it should scroll to - used so the
+    // admin lands on the (top-of-page) form fields instead of staying
+    // scrolled down at the row they clicked "Edit" on
+    const FORM_BY_ACTION = {
+      'edit-announcement': announcementForm,
+      'edit-player': playerForm,
+      'edit-team': teamForm,
+      'edit-competition': competitionForm,
+      'edit-season': seasonForm,
+      'edit-venue': venueForm,
+      'edit-fixture': fixtureForm,
+      'edit-standing': standingForm,
+      'edit-user': userForm,
+    };
+
+    // ---------------------------------------------------------------
+    // VALIDATION + CONFIRM HELPERS
+    // ---------------------------------------------------------------
+
+    // Human-readable labels for error messages (keyed by input `name`).
+    const FIELD_LABELS = {
+      goals: 'Goals', assists: 'Assists', minutes_played: 'Minutes', form_rating: 'Form rating',
+      height_cm: 'Height', club_shirt_number: 'Shirt number', founded_year: 'Founded year',
+      market_value_rands: 'Market value', average_rating: 'Average rating', tier: 'Tier',
+      capacity: 'Capacity', home_score: 'Home score', away_score: 'Away score', attendance: 'Attendance',
+      matchweek: 'Matchweek', position: 'Position', played: 'Played', wins: 'Wins', draws: 'Draws',
+      losses: 'Losses', goals_for: 'Goals for', goals_against: 'Goals against',
+      goal_difference: 'Goal difference', points: 'Points',
+      overall_rating: 'Overall rating', potential_rating: 'Potential rating',
+      saves: 'Saves', clean_sheets: 'Clean sheets', goals_conceded: 'Goals conceded',
+      tackles: 'Tackles', interceptions: 'Interceptions', clearances: 'Clearances',
+    };
+
+    // Inserts/removes a small red banner at the top of a form, same look as
+    // the login error box, instead of a browser alert() for every mistake.
+    function showFormError(form, message) {
+      clearFormError(form);
+      const box = document.createElement('div');
+      box.className = 'form-alert';
+      box.textContent = message;
+      form.insertBefore(box, form.firstChild);
+      box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    function clearFormError(form) {
+      const existing = form.querySelector('.form-alert');
+      if (existing) existing.remove();
+    }
+
+    // Walks every <input type="number"> in a form and rejects: non-numeric
+    // values, values below its min (except fields explicitly flagged with
+    // data-allow-negative, like goal difference), and values above its max
+    // (e.g. ratings capped at 99). Returns an error string, or null if OK.
+    function validateNoNegativeNumbers(form) {
+      const numberInputs = form.querySelectorAll('input[type="number"]');
+      for (const input of numberInputs) {
+        if (input.value === '') continue; // optional + left blank is fine
+        const value = Number(input.value);
+        const label = FIELD_LABELS[input.name] || input.name;
+        if (Number.isNaN(value)) return `${label} must be a valid number.`;
+        const allowNegative = input.dataset.allowNegative === 'true';
+        const min = input.getAttribute('min');
+        if (!allowNegative) {
+          if (value < 0) return `${label} cannot be negative.`;
+          if (min !== null && value < Number(min)) return `${label} cannot be less than ${min}.`;
+        }
+        const max = input.getAttribute('max');
+        if (max !== null && value > Number(max)) return `${label} cannot be more than ${max}.`;
+      }
+      return null;
+    }
+
+    function normalizeText(value) {
+      return String(value ?? '').trim().toLowerCase();
+    }
+
+    // Looks for an existing record in `list` whose given fields all match
+    // `payload` (case-insensitively), skipping the record currently being
+    // edited. Used for "same team/venue/competition/etc name" checks.
+    function findDuplicate(list, matchFields, payload, excludeId) {
+      return list.find((item) => {
+        if (excludeId != null && item.id === excludeId) return false;
+        return matchFields.every((field) => {
+          const a = normalizeText(item[field]);
+          const b = normalizeText(payload[field]);
+          return a !== '' && a === b;
+        });
+      });
+    }
+
+    // Reusable "Are you sure?" popup for every create/update/delete action.
+    // Resolves true/false depending on what the user clicked.
+    function confirmAction({ title = 'Are you sure?', message = '', confirmLabel = 'Confirm', danger = false } = {}) {
+      return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.innerHTML = `
+          <div class="modal-card">
+            <h3>${title}</h3>
+            <p>${message}</p>
+            <div class="modal-actions">
+              <button type="button" class="secondary" data-choice="cancel">Cancel</button>
+              <button type="button" class="${danger ? 'danger' : ''}" data-choice="confirm">${confirmLabel}</button>
+            </div>
+          </div>`;
+        document.body.appendChild(overlay);
+        const cleanup = (result) => { overlay.remove(); resolve(result); };
+        overlay.addEventListener('click', (event) => { if (event.target === overlay) cleanup(false); });
+        overlay.querySelector('[data-choice="cancel"]').addEventListener('click', () => cleanup(false));
+        overlay.querySelector('[data-choice="confirm"]').addEventListener('click', () => cleanup(true));
+      });
+    }
 
     function fmtCurrency(value) {
       return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(value || 0);
@@ -340,6 +504,30 @@
         <div class="stat-box"><div class="t-label">Announcements</div><div class="mv-num">${summary.total_announcements}</div></div>
         <div class="stat-box"><div class="t-label">Avg rating</div><div class="mv-num">${summary.average_player_rating}</div></div>
       `;
+    }
+
+    // Fills every <select data-options="teams|competitions|seasons|venues">
+    // with <option> tags built from whatever's currently in state, showing
+    // the human name but keeping the real id as the option's value. Runs
+    // after every load so a newly-added team shows up in dropdowns right
+    // away. Preserves the current selection (if any) across a refresh.
+    function populateSelectOptions() {
+      const optionsFor = {
+        teams: state.teams.map((t) => ({ value: t.id, label: t.name })),
+        competitions: state.competitions.map((c) => ({ value: c.id, label: c.name })),
+        seasons: state.seasons.map((s) => ({ value: s.id, label: s.label })),
+        venues: state.venues.map((v) => ({ value: v.id, label: v.name })),
+      };
+      const placeholders = { teams: 'Select team…', competitions: 'Select competition…', seasons: 'Select season…', venues: 'Select venue…' };
+
+      document.querySelectorAll('select[data-options]').forEach((select) => {
+        const kind = select.dataset.options;
+        const items = optionsFor[kind] || [];
+        const current = select.value;
+        select.innerHTML = `<option value="">${placeholders[kind] || 'Select…'}</option>`
+          + items.map((item) => `<option value="${item.value}">${item.label}</option>`).join('');
+        if (current) select.value = current;
+      });
     }
 
     async function loadDashboard() {
@@ -364,6 +552,9 @@
       state.venues = venues;
       state.fixtures = fixtures;
       state.standings = standings;
+
+      populateSelectOptions();
+
       renderAnnouncements();
       renderPlayers();
       renderTeams();
@@ -382,18 +573,19 @@
     }
 
     function resetAnnouncementForm() {
+      clearFormError(announcementForm);
       announcementForm.reset();
       state.editingAnnouncement = null;
       announcementForm.querySelector('button[type="submit"]').textContent = 'Save announcement';
     }
-    function resetPlayerForm() { playerForm.reset(); state.editingPlayer = null; playerForm.querySelector('button[type="submit"]').textContent = 'Save player'; }
-    function resetTeamForm() { teamForm.reset(); state.editingTeam = null; teamForm.querySelector('button[type="submit"]').textContent = 'Save team'; }
-    function resetCompetitionForm() { competitionForm.reset(); state.editingCompetition = null; competitionForm.querySelector('button[type="submit"]').textContent = 'Save competition'; }
-    function resetSeasonForm() { seasonForm.reset(); state.editingSeason = null; seasonForm.querySelector('button[type="submit"]').textContent = 'Save season'; }
-    function resetVenueForm() { venueForm.reset(); state.editingVenue = null; venueForm.querySelector('button[type="submit"]').textContent = 'Save venue'; }
-    function resetFixtureForm() { fixtureForm.reset(); state.editingFixture = null; fixtureForm.querySelector('button[type="submit"]').textContent = 'Save fixture'; }
-    function resetStandingForm() { standingForm.reset(); state.editingStanding = null; standingForm.querySelector('button[type="submit"]').textContent = 'Save standing'; }
-    function resetUserForm() { userForm.reset(); userForm.querySelector('input[name="is_active"]').checked = true; state.editingUser = null; userForm.querySelector('button[type="submit"]').textContent = 'Save user'; }
+    function resetPlayerForm() { clearFormError(playerForm); playerForm.reset(); state.editingPlayer = null; playerForm.querySelector('button[type="submit"]').textContent = 'Save player'; }
+    function resetTeamForm() { clearFormError(teamForm); teamForm.reset(); state.editingTeam = null; teamForm.querySelector('button[type="submit"]').textContent = 'Save team'; }
+    function resetCompetitionForm() { clearFormError(competitionForm); competitionForm.reset(); state.editingCompetition = null; competitionForm.querySelector('button[type="submit"]').textContent = 'Save competition'; }
+    function resetSeasonForm() { clearFormError(seasonForm); seasonForm.reset(); state.editingSeason = null; seasonForm.querySelector('button[type="submit"]').textContent = 'Save season'; }
+    function resetVenueForm() { clearFormError(venueForm); venueForm.reset(); state.editingVenue = null; venueForm.querySelector('button[type="submit"]').textContent = 'Save venue'; }
+    function resetFixtureForm() { clearFormError(fixtureForm); fixtureForm.reset(); state.editingFixture = null; fixtureForm.querySelector('button[type="submit"]').textContent = 'Save fixture'; }
+    function resetStandingForm() { clearFormError(standingForm); standingForm.reset(); state.editingStanding = null; standingForm.querySelector('button[type="submit"]').textContent = 'Save standing'; }
+    function resetUserForm() { clearFormError(userForm); userForm.reset(); userForm.querySelector('input[name="is_active"]').checked = true; state.editingUser = null; userForm.querySelector('button[type="submit"]').textContent = 'Save user'; }
 
     function showPanel(name) {
       document.querySelectorAll('[data-panel]').forEach((panel) => {
@@ -415,18 +607,53 @@
       `).join('');
     }
 
+    // Returns state.players filtered by the current search box value,
+    // matched against name, nationality, team and position.
+    function getFilteredPlayers() {
+      const term = state.playerSearch.trim().toLowerCase();
+      if (!term) return state.players;
+      return state.players.filter((p) => {
+        const haystack = `${p.first_name} ${p.last_name} ${p.nationality} ${p.team_name || ''} ${p.playing_position}`.toLowerCase();
+        return haystack.includes(term);
+      });
+    }
+
+    function renderPlayerPagination(totalPages) {
+      const el = document.getElementById('playerPagination');
+      if (totalPages <= 1) { el.innerHTML = ''; return; }
+      el.innerHTML = `
+        <button type="button" class="secondary" data-page="prev" ${state.playerPage === 1 ? 'disabled' : ''}>‹ Prev</button>
+        <span class="muted">Page ${state.playerPage} of ${totalPages}</span>
+        <button type="button" class="secondary" data-page="next" ${state.playerPage === totalPages ? 'disabled' : ''}>Next ›</button>
+      `;
+    }
+
     function renderPlayers() {
+      const filtered = getFilteredPlayers();
+      const totalPages = Math.max(1, Math.ceil(filtered.length / PLAYER_PAGE_SIZE));
+      if (state.playerPage > totalPages) state.playerPage = totalPages;
+      if (state.playerPage < 1) state.playerPage = 1;
+      const start = (state.playerPage - 1) * PLAYER_PAGE_SIZE;
+      const pageItems = filtered.slice(start, start + PLAYER_PAGE_SIZE);
+
       const tbody = document.getElementById('playerTable');
-      tbody.innerHTML = state.players.map(item => `
+      tbody.innerHTML = pageItems.map(item => `
         <tr>
-          <td>${item.first_name} ${item.last_name}<div class="muted">${item.nationality}</div></td>
-          <td>${item.playing_position}</td>
+          <td>${item.first_name} ${item.last_name}${item.is_captain ? '<span class="pill pill-captain">C</span>' : ''}<div class="muted">${item.nationality}</div></td>
+          <td>${(item.playing_position || '').toUpperCase()}</td>
           <td>${item.team_name || item.team_id}</td>
           <td>${item.overall_rating || '-'}</td>
           <td>${fmtCurrency(item.market_value_rands || 0)}</td>
           <td><div class="action-row"><button class="secondary" data-action="edit-player" data-id="${item.id}">Edit</button><button class="secondary" data-action="delete-player" data-id="${item.id}">Delete</button></div></td>
         </tr>
       `).join('');
+
+      const resultCount = document.getElementById('playerResultCount');
+      resultCount.textContent = filtered.length === state.players.length
+        ? `${filtered.length} player${filtered.length === 1 ? '' : 's'}`
+        : `${filtered.length} of ${state.players.length} players`;
+
+      renderPlayerPagination(totalPages);
     }
 
     function renderTeams() {
@@ -435,6 +662,8 @@
         <tr>
           <td>${item.name}</td>
           <td>${item.city || '-'}</td>
+          <td>${item.coach ? `${item.coach.first_name} ${item.coach.last_name}` : '-'}</td>
+          <td>${item.captain ? `${item.captain.first_name} ${item.captain.last_name}` : '-'}</td>
           <td>${fmtCurrency(item.market_value_rands || 0)}</td>
           <td>${item.average_rating || '-'}</td>
           <td><div class="action-row"><button class="secondary" data-action="edit-team" data-id="${item.id}">Edit</button><button class="secondary" data-action="delete-team" data-id="${item.id}">Delete</button></div></td>
@@ -457,14 +686,16 @@
 
     function renderSeasons() {
       const tbody = document.getElementById('seasonTable');
-      tbody.innerHTML = state.seasons.map(item => `
+      tbody.innerHTML = state.seasons.map(item => {
+        const competition = state.competitions.find((c) => c.id === item.competition_id);
+        return `
         <tr>
           <td>${item.label}</td>
-          <td>${item.competition_id}</td>
+          <td>${competition ? competition.name : item.competition_id}</td>
           <td><span class="pill">${item.is_current ? 'Yes' : 'No'}</span></td>
           <td><div class="action-row"><button class="secondary" data-action="edit-season" data-id="${item.id}">Edit</button><button class="secondary" data-action="delete-season" data-id="${item.id}">Delete</button></div></td>
         </tr>
-      `).join('');
+      `; }).join('');
     }
 
     function renderVenues() {
@@ -520,10 +751,29 @@
       `).join('');
     }
 
+    // ---------------------------------------------------------------
+    // FORM SUBMIT HANDLERS - each now: validate -> check duplicates ->
+    // confirm popup -> save
+    // ---------------------------------------------------------------
+
     announcementForm.addEventListener('submit', async (event) => {
       event.preventDefault();
+      clearFormError(announcementForm);
       const payload = Object.fromEntries(new FormData(announcementForm).entries());
       payload.is_pinned = announcementForm.querySelector('input[name="is_pinned"]').checked;
+
+      if (payload.slug) {
+        const dupe = findDuplicate(state.announcements, ['slug'], payload, state.editingAnnouncement?.id);
+        if (dupe) { showFormError(announcementForm, `An announcement with slug "${payload.slug}" already exists.`); return; }
+      }
+
+      const ok = await confirmAction({
+        title: state.editingAnnouncement ? 'Update announcement?' : 'Create announcement?',
+        message: `${state.editingAnnouncement ? 'Save changes to' : 'Create'} "${payload.title}"?`,
+        confirmLabel: state.editingAnnouncement ? 'Update' : 'Create',
+      });
+      if (!ok) return;
+
       if (state.editingAnnouncement) {
         await apiPut(`/admin/announcements/${state.editingAnnouncement.id}`, payload);
       } else {
@@ -532,8 +782,10 @@
       resetAnnouncementForm();
       await loadDashboard();
     });
+
     playerForm.addEventListener('submit', async (event) => {
       event.preventDefault();
+      clearFormError(playerForm);
       const payload = Object.fromEntries(new FormData(playerForm).entries());
       payload.goals = Number(payload.goals || 0);
       payload.assists = Number(payload.assists || 0);
@@ -542,6 +794,43 @@
       payload.height_cm = Number(payload.height_cm || 0);
       payload.club_shirt_number = Number(payload.club_shirt_number || 0);
       payload.team_id = Number(payload.team_id);
+
+      // new fields - all optional, so blank stays null rather than 0
+      payload.overall_rating = payload.overall_rating ? Number(payload.overall_rating) : null;
+      payload.potential_rating = payload.potential_rating ? Number(payload.potential_rating) : null;
+      payload.market_value_rands = payload.market_value_rands ? Number(payload.market_value_rands) : null;
+      payload.saves = payload.saves ? Number(payload.saves) : null;
+      payload.clean_sheets = payload.clean_sheets ? Number(payload.clean_sheets) : null;
+      payload.goals_conceded = payload.goals_conceded ? Number(payload.goals_conceded) : null;
+      payload.tackles = payload.tackles ? Number(payload.tackles) : null;
+      payload.interceptions = payload.interceptions ? Number(payload.interceptions) : null;
+      payload.clearances = payload.clearances ? Number(payload.clearances) : null;
+      payload.is_captain = playerForm.querySelector('input[name="is_captain"]').checked;
+
+      const negErr = validateNoNegativeNumbers(playerForm);
+      if (negErr) { showFormError(playerForm, negErr); return; }
+
+      const dupe = findDuplicate(state.players, ['first_name', 'last_name', 'date_of_birth'], payload, state.editingPlayer?.id);
+      if (dupe) { showFormError(playerForm, `${payload.first_name} ${payload.last_name} (same date of birth) is already in the database.`); return; }
+
+      // a team can only have one captain - if this player is being made
+      // captain and someone else on the same team already holds it, warn
+      // (non-blocking) that saving will hand the armband over
+      let captainNote = '';
+      if (payload.is_captain) {
+        const existingCaptain = state.players.find((p) => p.team_id === payload.team_id && p.is_captain && p.id !== state.editingPlayer?.id);
+        if (existingCaptain) {
+          captainNote = ` This will replace ${existingCaptain.first_name} ${existingCaptain.last_name} as team captain.`;
+        }
+      }
+
+      const ok = await confirmAction({
+        title: state.editingPlayer ? 'Update player?' : 'Add player?',
+        message: `${state.editingPlayer ? 'Save changes to' : 'Add'} ${payload.first_name} ${payload.last_name}?${captainNote}`,
+        confirmLabel: state.editingPlayer ? 'Update' : 'Create',
+      });
+      if (!ok) return;
+
       if (state.editingPlayer) {
         await apiPut(`/admin/players/${state.editingPlayer.id}`, payload);
       } else {
@@ -550,12 +839,46 @@
       resetPlayerForm();
       await loadDashboard();
     });
+
     teamForm.addEventListener('submit', async (event) => {
       event.preventDefault();
+      clearFormError(teamForm);
       const payload = Object.fromEntries(new FormData(teamForm).entries());
       payload.founded_year = Number(payload.founded_year || 0);
       payload.market_value_rands = Number(payload.market_value_rands || 0);
       payload.average_rating = Number(payload.average_rating || 0);
+
+      const negErr = validateNoNegativeNumbers(teamForm);
+      if (negErr) { showFormError(teamForm, negErr); return; }
+
+      const dupe = findDuplicate(state.teams, ['name'], payload, state.editingTeam?.id);
+      if (dupe) { showFormError(teamForm, `A team named "${payload.name}" already exists.`); return; }
+
+      // pull the flat coach_* fields into a nested object the API expects;
+      // if both name fields are blank, treat it as "no coach change" so an
+      // existing coach isn't accidentally wiped by an empty submit
+      if (payload.coach_first_name || payload.coach_last_name) {
+        payload.coach = {
+          first_name: payload.coach_first_name || '',
+          last_name: payload.coach_last_name || '',
+          nationality: payload.coach_nationality || null,
+          photo_url: payload.coach_photo_url || null,
+          appointed_date: payload.coach_appointed_date || null,
+        };
+      }
+      delete payload.coach_first_name;
+      delete payload.coach_last_name;
+      delete payload.coach_nationality;
+      delete payload.coach_photo_url;
+      delete payload.coach_appointed_date;
+
+      const ok = await confirmAction({
+        title: state.editingTeam ? 'Update team?' : 'Create team?',
+        message: `${state.editingTeam ? 'Save changes to' : 'Add'} "${payload.name}"?`,
+        confirmLabel: state.editingTeam ? 'Update' : 'Create',
+      });
+      if (!ok) return;
+
       if (state.editingTeam) {
         await apiPut(`/admin/teams/${state.editingTeam.id}`, payload);
       } else {
@@ -564,11 +887,29 @@
       resetTeamForm();
       await loadDashboard();
     });
+
     competitionForm.addEventListener('submit', async (event) => {
       event.preventDefault();
+      clearFormError(competitionForm);
       const payload = Object.fromEntries(new FormData(competitionForm).entries());
       payload.tier = Number(payload.tier || 0);
       payload.is_active = competitionForm.querySelector('input[name="is_active"]').checked;
+
+      const negErr = validateNoNegativeNumbers(competitionForm);
+      if (negErr) { showFormError(competitionForm, negErr); return; }
+
+      const nameDupe = findDuplicate(state.competitions, ['name'], payload, state.editingCompetition?.id);
+      if (nameDupe) { showFormError(competitionForm, `A competition named "${payload.name}" already exists.`); return; }
+      const codeDupe = findDuplicate(state.competitions, ['code'], payload, state.editingCompetition?.id);
+      if (codeDupe) { showFormError(competitionForm, `Competition code "${payload.code}" is already in use.`); return; }
+
+      const ok = await confirmAction({
+        title: state.editingCompetition ? 'Update competition?' : 'Create competition?',
+        message: `${state.editingCompetition ? 'Save changes to' : 'Add'} "${payload.name}"?`,
+        confirmLabel: state.editingCompetition ? 'Update' : 'Create',
+      });
+      if (!ok) return;
+
       if (state.editingCompetition) {
         await apiPut(`/admin/competitions/${state.editingCompetition.id}`, payload);
       } else {
@@ -577,11 +918,29 @@
       resetCompetitionForm();
       await loadDashboard();
     });
+
     seasonForm.addEventListener('submit', async (event) => {
       event.preventDefault();
+      clearFormError(seasonForm);
       const payload = Object.fromEntries(new FormData(seasonForm).entries());
       payload.competition_id = Number(payload.competition_id || 0);
       payload.is_current = seasonForm.querySelector('input[name="is_current"]').checked;
+
+      const dupe = findDuplicate(state.seasons, ['label', 'competition_id'], payload, state.editingSeason?.id);
+      if (dupe) { showFormError(seasonForm, `A season labelled "${payload.label}" already exists for this competition.`); return; }
+
+      if (payload.start_date && payload.end_date && new Date(payload.start_date) > new Date(payload.end_date)) {
+        showFormError(seasonForm, 'The start date must be before the end date.');
+        return;
+      }
+
+      const ok = await confirmAction({
+        title: state.editingSeason ? 'Update season?' : 'Create season?',
+        message: `${state.editingSeason ? 'Save changes to' : 'Add'} "${payload.label}"?`,
+        confirmLabel: state.editingSeason ? 'Update' : 'Create',
+      });
+      if (!ok) return;
+
       if (state.editingSeason) {
         await apiPut(`/admin/seasons/${state.editingSeason.id}`, payload);
       } else {
@@ -590,10 +949,26 @@
       resetSeasonForm();
       await loadDashboard();
     });
+
     venueForm.addEventListener('submit', async (event) => {
       event.preventDefault();
+      clearFormError(venueForm);
       const payload = Object.fromEntries(new FormData(venueForm).entries());
       payload.capacity = payload.capacity ? Number(payload.capacity) : null;
+
+      const negErr = validateNoNegativeNumbers(venueForm);
+      if (negErr) { showFormError(venueForm, negErr); return; }
+
+      const dupe = findDuplicate(state.venues, ['name'], payload, state.editingVenue?.id);
+      if (dupe) { showFormError(venueForm, `A venue named "${payload.name}" already exists.`); return; }
+
+      const ok = await confirmAction({
+        title: state.editingVenue ? 'Update venue?' : 'Create venue?',
+        message: `${state.editingVenue ? 'Save changes to' : 'Add'} "${payload.name}"?`,
+        confirmLabel: state.editingVenue ? 'Update' : 'Create',
+      });
+      if (!ok) return;
+
       if (state.editingVenue) {
         await apiPut(`/admin/venues/${state.editingVenue.id}`, payload);
       } else {
@@ -602,8 +977,10 @@
       resetVenueForm();
       await loadDashboard();
     });
+
     fixtureForm.addEventListener('submit', async (event) => {
       event.preventDefault();
+      clearFormError(fixtureForm);
       const payload = Object.fromEntries(new FormData(fixtureForm).entries());
       payload.home_score = Number(payload.home_score || 0);
       payload.away_score = Number(payload.away_score || 0);
@@ -614,11 +991,30 @@
       payload.competition_id = Number(payload.competition_id);
       payload.matchweek = payload.matchweek ? Number(payload.matchweek) : null;
       payload.attendance = payload.attendance ? Number(payload.attendance) : null;
+
+      const negErr = validateNoNegativeNumbers(fixtureForm);
+      if (negErr) { showFormError(fixtureForm, negErr); return; }
+
+      if (payload.home_team_id === payload.away_team_id) {
+        showFormError(fixtureForm, 'A team cannot play against itself — pick two different teams.');
+        return;
+      }
+
       // datetime-local has no timezone suffix - ISO-ify it so the API's
       // datetime field parses it the same way everywhere
       if (payload.match_datetime && !payload.match_datetime.includes('Z')) {
         payload.match_datetime = new Date(payload.match_datetime).toISOString();
       }
+
+      const homeTeam = state.teams.find((t) => t.id === payload.home_team_id);
+      const awayTeam = state.teams.find((t) => t.id === payload.away_team_id);
+      const ok = await confirmAction({
+        title: state.editingFixture ? 'Update fixture?' : 'Create fixture?',
+        message: `${state.editingFixture ? 'Save changes to' : 'Add'} ${homeTeam?.name || 'Home'} vs ${awayTeam?.name || 'Away'}?`,
+        confirmLabel: state.editingFixture ? 'Update' : 'Create',
+      });
+      if (!ok) return;
+
       if (state.editingFixture) {
         await apiPut(`/admin/fixtures/${state.editingFixture.id}`, payload);
       } else {
@@ -627,19 +1023,28 @@
       resetFixtureForm();
       await loadDashboard();
     });
+
     document.getElementById('recomputeStandings').addEventListener('click', async () => {
       const seasonId = Number(fixtureForm.querySelector('[name="season_id"]').value);
       const competitionId = Number(fixtureForm.querySelector('[name="competition_id"]').value);
       if (!seasonId || !competitionId) {
-        alert('Fill in season id and competition id on the fixture form first.');
+        alert('Pick a season and competition on the fixture form first.');
         return;
       }
+      const ok = await confirmAction({
+        title: 'Recompute standings?',
+        message: 'This will recalculate the entire table for the selected season and competition from fixture results.',
+        confirmLabel: 'Recompute',
+      });
+      if (!ok) return;
       await apiPost(`/standings/recompute?season_id=${seasonId}&competition_id=${competitionId}`, {});
       await loadDashboard();
       showPanel('standings');
     });
+
     standingForm.addEventListener('submit', async (event) => {
       event.preventDefault();
+      clearFormError(standingForm);
       const payload = Object.fromEntries(new FormData(standingForm).entries());
       payload.position = Number(payload.position || 0);
       payload.played = Number(payload.played || 0);
@@ -653,6 +1058,26 @@
       payload.season_id = Number(payload.season_id || 0);
       payload.competition_id = Number(payload.competition_id || 0);
       payload.team_id = Number(payload.team_id || 0);
+
+      const negErr = validateNoNegativeNumbers(standingForm);
+      if (negErr) { showFormError(standingForm, negErr); return; }
+
+      if (payload.wins + payload.draws + payload.losses !== payload.played) {
+        showFormError(standingForm, 'Wins + draws + losses must add up to matches played.');
+        return;
+      }
+
+      const dupe = findDuplicate(state.standings, ['team_id', 'season_id', 'competition_id'], payload, state.editingStanding?.id);
+      if (dupe) { showFormError(standingForm, 'A standings row for this team, season and competition already exists.'); return; }
+
+      const team = state.teams.find((t) => t.id === payload.team_id);
+      const ok = await confirmAction({
+        title: state.editingStanding ? 'Update standing?' : 'Create standing?',
+        message: `${state.editingStanding ? 'Save changes for' : 'Add'} ${team?.name || 'this team'}?`,
+        confirmLabel: state.editingStanding ? 'Update' : 'Create',
+      });
+      if (!ok) return;
+
       if (state.editingStanding) {
         await apiPut(`/admin/standings/${state.editingStanding.id}`, payload);
       } else {
@@ -661,69 +1086,92 @@
       resetStandingForm();
       await loadDashboard();
     });
+
     userForm.addEventListener('submit', async (event) => {
       event.preventDefault();
+      clearFormError(userForm);
       const payload = Object.fromEntries(new FormData(userForm).entries());
       payload.is_active = userForm.querySelector('input[name="is_active"]').checked;
       if (!payload.password) delete payload.password;
+
+      const usernameDupe = findDuplicate(state.users, ['username'], payload, state.editingUser?.id);
+      if (usernameDupe) { showFormError(userForm, `Username "${payload.username}" is already taken.`); return; }
+      const emailDupe = findDuplicate(state.users, ['email'], payload, state.editingUser?.id);
+      if (emailDupe) { showFormError(userForm, `Email "${payload.email}" is already in use.`); return; }
+
+      if (!state.editingUser && !payload.password) {
+        showFormError(userForm, 'A password is required when creating a new user.');
+        return;
+      }
+
+      const ok = await confirmAction({
+        title: state.editingUser ? 'Update user?' : 'Create user?',
+        message: `${state.editingUser ? 'Save changes to' : 'Create'} ${payload.first_name} ${payload.last_name} (${payload.role})?`,
+        confirmLabel: state.editingUser ? 'Update' : 'Create',
+      });
+      if (!ok) return;
+
       try {
         if (state.editingUser) {
           await apiPut(`/auth/users/${state.editingUser.id}`, payload);
         } else {
-          if (!payload.password) {
-            alert('A password is required when creating a new user.');
-            return;
-          }
           await apiPost('/auth/users', payload);
         }
         resetUserForm();
         await loadDashboard();
       } catch (err) {
-        alert(err.message);
+        showFormError(userForm, err.message);
       }
     });
+
+    // ---------------------------------------------------------------
+    // TABLE ACTIONS (edit / delete) - deletes now route through the same
+    // confirm popup used for create/update, keyed off the button's action
+    // ---------------------------------------------------------------
+
+    const DELETE_CONFIG = {
+      'delete-announcement': { list: 'announcements', path: '/admin/announcements', label: (item) => item.title },
+      'delete-player': { list: 'players', path: '/admin/players', label: (item) => `${item.first_name} ${item.last_name}` },
+      'delete-team': { list: 'teams', path: '/admin/teams', label: (item) => item.name },
+      'delete-competition': { list: 'competitions', path: '/admin/competitions', label: (item) => item.name },
+      'delete-season': { list: 'seasons', path: '/admin/seasons', label: (item) => item.label },
+      'delete-venue': { list: 'venues', path: '/admin/venues', label: (item) => item.name },
+      'delete-fixture': { list: 'fixtures', path: '/admin/fixtures', label: (item) => `${item.home_team_name || 'Home'} vs ${item.away_team_name || 'Away'}` },
+      'delete-standing': { list: 'standings', path: '/admin/standings', label: (item) => item.team_name || 'this row' },
+      'delete-user': { list: 'users', path: '/auth/users', label: (item) => `${item.first_name} ${item.last_name}` },
+    };
 
     document.addEventListener('click', async (event) => {
       const button = event.target.closest('button[data-action]');
       if (!button) return;
       const id = Number(button.dataset.id);
       const action = button.dataset.action;
-      if (action === 'delete-announcement') {
-        await apiDelete(`/admin/announcements/${id}`);
-        await loadDashboard();
-      } else if (action === 'delete-player') {
-        await apiDelete(`/admin/players/${id}`);
-        await loadDashboard();
-      } else if (action === 'delete-team') {
-        await apiDelete(`/admin/teams/${id}`);
-        await loadDashboard();
-      } else if (action === 'delete-competition') {
-        await apiDelete(`/admin/competitions/${id}`);
-        await loadDashboard();
-      } else if (action === 'delete-season') {
-        await apiDelete(`/admin/seasons/${id}`);
-        await loadDashboard();
-      } else if (action === 'delete-venue') {
-        await apiDelete(`/admin/venues/${id}`);
-        await loadDashboard();
-      } else if (action === 'delete-fixture') {
-        await apiDelete(`/admin/fixtures/${id}`);
-        await loadDashboard();
-      } else if (action === 'delete-standing') {
-        await apiDelete(`/admin/standings/${id}`);
-        await loadDashboard();
-      } else if (action === 'delete-user') {
-        if (!confirm('Delete this user? This cannot be undone.')) return;
+
+      if (DELETE_CONFIG[action]) {
+        const config = DELETE_CONFIG[action];
+        const item = state[config.list].find((entry) => entry.id === id);
+        const label = item ? config.label(item) : 'this item';
+        const ok = await confirmAction({
+          title: 'Delete this?',
+          message: `This will permanently delete "${label}". This cannot be undone.`,
+          confirmLabel: 'Delete',
+          danger: true,
+        });
+        if (!ok) return;
         try {
-          await apiDelete(`/auth/users/${id}`);
+          await apiDelete(`${config.path}/${id}`);
           await loadDashboard();
         } catch (err) {
           alert(err.message);
         }
-      } else if (action === 'edit-announcement') {
+        return;
+      }
+
+      if (action === 'edit-announcement') {
         const item = state.announcements.find((entry) => entry.id === id);
         if (!item) return;
         state.editingAnnouncement = item;
+        clearFormError(announcementForm);
         announcementForm.querySelector('input[name="title"]').value = item.title;
         announcementForm.querySelector('input[name="slug"]').value = item.slug || '';
         announcementForm.querySelector('select[name="status"]').value = item.status;
@@ -737,24 +1185,44 @@
         const item = state.players.find((entry) => entry.id === id);
         if (!item) return;
         state.editingPlayer = item;
+        clearFormError(playerForm);
         Object.entries(item).forEach(([key, value]) => {
           const field = playerForm.querySelector(`[name="${key}"]`);
-          if (field) field.value = value ?? '';
+          if (!field) return;
+          if (field.type === 'checkbox') { field.checked = !!value; return; }
+          field.value = value ?? '';
         });
         playerForm.querySelector('button[type="submit"]').textContent = 'Update player';
       } else if (action === 'edit-team') {
         const item = state.teams.find((entry) => entry.id === id);
         if (!item) return;
         state.editingTeam = item;
+        clearFormError(teamForm);
         Object.entries(item).forEach(([key, value]) => {
           const field = teamForm.querySelector(`[name="${key}"]`);
           if (field) field.value = value ?? '';
         });
+        // the generic loop above can't reach into item.coach (a nested
+        // object), so populate the flat coach_* fields explicitly
+        if (item.coach) {
+          teamForm.querySelector('[name="coach_first_name"]').value = item.coach.first_name || '';
+          teamForm.querySelector('[name="coach_last_name"]').value = item.coach.last_name || '';
+          teamForm.querySelector('[name="coach_nationality"]').value = item.coach.nationality || '';
+          teamForm.querySelector('[name="coach_photo_url"]').value = item.coach.photo_url || '';
+          teamForm.querySelector('[name="coach_appointed_date"]').value = item.coach.appointed_date || '';
+        } else {
+          teamForm.querySelector('[name="coach_first_name"]').value = '';
+          teamForm.querySelector('[name="coach_last_name"]').value = '';
+          teamForm.querySelector('[name="coach_nationality"]').value = '';
+          teamForm.querySelector('[name="coach_photo_url"]').value = '';
+          teamForm.querySelector('[name="coach_appointed_date"]').value = '';
+        }
         teamForm.querySelector('button[type="submit"]').textContent = 'Update team';
       } else if (action === 'edit-competition') {
         const item = state.competitions.find((entry) => entry.id === id);
         if (!item) return;
         state.editingCompetition = item;
+        clearFormError(competitionForm);
         Object.entries(item).forEach(([key, value]) => {
           const field = competitionForm.querySelector(`[name="${key}"]`);
           if (field) field.value = value ?? '';
@@ -765,6 +1233,7 @@
         const item = state.seasons.find((entry) => entry.id === id);
         if (!item) return;
         state.editingSeason = item;
+        clearFormError(seasonForm);
         Object.entries(item).forEach(([key, value]) => {
           const field = seasonForm.querySelector(`[name="${key}"]`);
           if (field) field.value = value ?? '';
@@ -775,6 +1244,7 @@
         const item = state.venues.find((entry) => entry.id === id);
         if (!item) return;
         state.editingVenue = item;
+        clearFormError(venueForm);
         Object.entries(item).forEach(([key, value]) => {
           const field = venueForm.querySelector(`[name="${key}"]`);
           if (field) field.value = value ?? '';
@@ -784,6 +1254,7 @@
         const item = state.fixtures.find((entry) => entry.id === id);
         if (!item) return;
         state.editingFixture = item;
+        clearFormError(fixtureForm);
         Object.entries(item).forEach(([key, value]) => {
           const field = fixtureForm.querySelector(`[name="${key}"]`);
           if (!field) return;
@@ -799,6 +1270,7 @@
         const item = state.standings.find((entry) => entry.id === id);
         if (!item) return;
         state.editingStanding = item;
+        clearFormError(standingForm);
         Object.entries(item).forEach(([key, value]) => {
           const field = standingForm.querySelector(`[name="${key}"]`);
           if (field) field.value = value ?? '';
@@ -808,6 +1280,7 @@
         const item = state.users.find((entry) => entry.id === id);
         if (!item) return;
         state.editingUser = item;
+        clearFormError(userForm);
         userForm.querySelector('input[name="first_name"]').value = item.first_name;
         userForm.querySelector('input[name="last_name"]').value = item.last_name;
         userForm.querySelector('input[name="username"]').value = item.username;
@@ -816,6 +1289,12 @@
         userForm.querySelector('input[name="password"]').value = '';
         userForm.querySelector('input[name="is_active"]').checked = !!item.is_active;
         userForm.querySelector('button[type="submit"]').textContent = 'Update user';
+      }
+
+      // for any edit-* action, scroll the admin up to that form's fields
+      // instead of leaving them scrolled down at the row they clicked
+      if (FORM_BY_ACTION[action]) {
+        FORM_BY_ACTION[action].scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     });
 
@@ -833,6 +1312,22 @@
     document.getElementById('resetFixture').addEventListener('click', resetFixtureForm);
     document.getElementById('resetStanding').addEventListener('click', resetStandingForm);
     document.getElementById('resetUser').addEventListener('click', resetUserForm);
+
+    // Players search box: filters + resets to page 1 on every keystroke
+    document.getElementById('playerSearch').addEventListener('input', (event) => {
+      state.playerSearch = event.target.value;
+      state.playerPage = 1;
+      renderPlayers();
+    });
+
+    // Players pagination: Prev/Next buttons
+    document.getElementById('playerPagination').addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-page]');
+      if (!button) return;
+      if (button.dataset.page === 'prev') state.playerPage -= 1;
+      if (button.dataset.page === 'next') state.playerPage += 1;
+      renderPlayers();
+    });
 
     // on load: if we have a stored token, verify it's still valid before
     // showing the dashboard - a token can go stale (expired, or the user

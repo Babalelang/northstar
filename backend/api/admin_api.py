@@ -48,8 +48,10 @@ from schemas.admin import (
     VenueCreate,
     VenueOut,
     VenueUpdate,
+    CaptainOut,
 )
 from services.analytics_service import apply_player_metrics
+from services.players_service import PlayersService
 
 router = APIRouter(prefix="/admin", tags=["Admin"], dependencies=[Depends(get_current_user)])
 
@@ -181,13 +183,25 @@ def create_player(payload: PlayerCreate, db: Session = Depends(get_db)):
         club_shirt_number=payload.club_shirt_number,
         playing_position=payload.playing_position,
         team_id=payload.team_id,
+        is_captain=payload.is_captain,
         goals=payload.goals or 0,
         assists=payload.assists or 0,
         minutes_played=payload.minutes_played or 0,
+        saves=payload.saves,
+        clean_sheets=payload.clean_sheets,
+        goals_conceded=payload.goals_conceded,
+        tackles=payload.tackles,
+        interceptions=payload.interceptions,
+        clearances=payload.clearances,
         form_rating=payload.form_rating,
     )
     apply_player_metrics(item, override_rands=payload.market_value_rands)
     db.add(item)
+    db.flush()  # get item.id before touching captain exclusivity
+
+    if payload.is_captain:
+        PlayersService.clear_other_captains(db, team_id=item.team_id, keep_player_id=item.id)
+
     db.commit()
     db.refresh(item)
     out = PlayerOut.model_validate(item)
@@ -211,27 +225,38 @@ def update_player(player_id: int, payload: PlayerUpdate, db: Session = Depends(g
     item.club_shirt_number = payload.club_shirt_number
     item.playing_position = payload.playing_position
     item.team_id = payload.team_id
+    item.is_captain = payload.is_captain
     item.goals = payload.goals or 0
     item.assists = payload.assists or 0
     item.minutes_played = payload.minutes_played or 0
+    item.saves = payload.saves
+    item.clean_sheets = payload.clean_sheets
+    item.goals_conceded = payload.goals_conceded
+    item.tackles = payload.tackles
+    item.interceptions = payload.interceptions
+    item.clearances = payload.clearances
     item.form_rating = payload.form_rating
-    apply_player_metrics(item, override_rands=payload.market_value_rands)
+    apply_player_metrics(item, override_rands=payload.market_value_rands,override_overall=payload.overall_rating)
+
+    if payload.is_captain:
+        PlayersService.clear_other_captains(db, team_id=item.team_id, keep_player_id=item.id)
+
     db.commit()
     db.refresh(item)
     out = PlayerOut.model_validate(item)
     out.market_value_rands = item.market_value_rands
     return out
 
-
 @router.get("/teams", response_model=list[TeamOut])
 def list_teams(db: Session = Depends(get_db)):
     teams = db.query(Team).order_by(Team.name.asc()).all()
 
     output = []
-
     for team in teams:
         item = TeamOut.model_validate(team)
         item.market_value_rands = team.market_value_rands
+        captain = PlayersService.get_captain(db, team.id)
+        item.captain = CaptainOut.model_validate(captain) if captain else None
         output.append(item)
 
     return output

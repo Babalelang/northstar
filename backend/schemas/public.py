@@ -60,6 +60,28 @@ class VenueOut(BaseModel):
     image_url: str | None = None
 
 
+# Public-facing coach shape, mirrors CoachOut in schemas/admin.py but kept
+# separate here since this module's models are intentionally trimmed down
+# for public consumption (no created_at/updated_at, etc).
+class CoachOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    first_name: str
+    last_name: str
+    nationality: str | None = None
+    photo_url: str | None = None
+    appointed_date: date | None = None
+
+class CaptainOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    first_name: str
+    last_name: str
+    photo_url: str | None = None
+    club_shirt_number: int | None = None
+    playing_position: str
+
 class TeamOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -74,6 +96,9 @@ class TeamOut(BaseModel):
     founded_year: int | None = None
     market_value_rands: int | None = None
     average_rating: float | None = None
+    coach: CoachOut | None = None
+    captain: CaptainOut | None = None
+    
 
 
 class PlayerOut(BaseModel):

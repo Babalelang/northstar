@@ -22,6 +22,25 @@ class PlayersService:
         return db.get(Player, player_id)
 
     @staticmethod
+    def get_captain(db: Session, team_id: int) -> Player | None:
+        return (
+            db.query(Player)
+            .filter(Player.team_id == team_id, Player.is_captain.is_(True))
+            .first()
+        )
+
+    @staticmethod
+    def clear_other_captains(db: Session, team_id: int, keep_player_id: int | None = None):
+        """Unset is_captain on every other player at this club so there's
+        only ever one captain per team. Call this BEFORE flushing a player
+        whose is_captain is being set to True.
+        """
+        query = db.query(Player).filter(Player.team_id == team_id, Player.is_captain.is_(True))
+        if keep_player_id is not None:
+            query = query.filter(Player.id != keep_player_id)
+        query.update({Player.is_captain: False}, synchronize_session=False)
+
+    @staticmethod
     def create(db: Session, player: Player):
         db.add(player)
         db.commit()

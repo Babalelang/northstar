@@ -13,22 +13,26 @@
   <header class="top">
     <div class="wrap navbar">
       <div class="logo"><span class="l-v1">V</span><span class="l-u">U</span><span class="l-v2">V</span><span class="l-a">A</span></div>
-      <nav class="links">
-        <a href="vuva.html">Home</a>
-        <a href="table.html" class="active">Table</a>
-        <a href="fixtures.html">Fixtures</a>
-        <a href="news.html">News</a>
-        <a href="players.html">Players</a>
-        <a href="market.html">Market Value</a>
-        <a href="clubs.html">Clubs</a>
-        <a href="statistics.html">Statistics</a>
-   
-      </nav>
+       <nav class="links">
+  <a href="index.html" class="active">Home</a>
+  <a href="table.html">Table</a>
+  <a href="clubs.html">Clubs</a>
+  <a href="players.html">Players</a>
+  <a href="fixtures.html">Fixtures</a>
+  <a href="market.html">Market Value</a>
+  <a href="news.html">News</a>
+  <a href="statistics.html">Statistics</a>
+</nav>
     </div>
   </header>
   <main class="wrap" style="padding: 60px 24px 80px;">
     <h2 class="section-title">League standings</h2>
     <p class="section-sub">Every position, point and goal here is computed from our own fixture results and standings data.</p>
+    <div class="table-controls">
+      <select id="season-filter" aria-label="Filter standings by season">
+        <option value="all">All seasons</option>
+      </select>
+    </div>
     <div class="table-card">
       <table class="psl" id="table-body">
         <thead>

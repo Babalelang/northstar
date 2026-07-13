@@ -43,9 +43,18 @@ class PlayerBase(BaseModel):
     club_shirt_number: int | None = None
     playing_position: str
     team_id: int
+    is_captain: bool = False
     goals: int | None = None
     assists: int | None = None
     minutes_played: int | None = None
+    # goalkeeper stats
+    saves: int | None = None
+    clean_sheets: int | None = None
+    goals_conceded: int | None = None
+    # defender stats
+    tackles: int | None = None
+    interceptions: int | None = None
+    clearances: int | None = None
     form_rating: float | None = None
     market_value_rands: int | None = None  # None = auto-calculate; set a value to override
     overall_rating: float | None = None
@@ -69,6 +78,31 @@ class PlayerOut(PlayerBase):
     created_at: datetime
     updated_at: datetime
 
+# --- Coach schemas live above TeamBase because TeamBase references CoachIn -
+# Pydantic resolves annotations at class-definition time, so CoachIn has to
+# already exist by the time TeamBase is defined, or this raises a NameError
+# at import (this previously sat at the bottom of the file, which broke).
+class CoachIn(BaseModel):
+    """Nested coach payload sent as part of a team create/update."""
+    first_name: str
+    last_name: str
+    nationality: str | None = None
+    date_of_birth: date | None = None
+    photo_url: str | None = None
+    appointed_date: date | None = None
+
+
+class CoachOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    first_name: str
+    last_name: str
+    nationality: str | None = None
+    date_of_birth: date | None = None
+    photo_url: str | None = None
+    appointed_date: date | None = None
+
 
 class TeamBase(BaseModel):
     name: str
@@ -91,12 +125,25 @@ class TeamCreate(TeamBase):
 class TeamUpdate(TeamBase):
     pass
 
+class CaptainOut(BaseModel):
+    """Minimal player payload for showing a team's captain — same idea as CoachOut."""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    first_name: str
+    last_name: str
+    photo_url: str | None = None
+    club_shirt_number: int | None = None
+    playing_position: str
+
 
 class TeamOut(TeamBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    market_value_rands: int | None = None  # derived for display only, not stored
+    market_value_rands: int | None = None
+    coach: CoachOut | None = None
+    captain: CaptainOut | None = None  # derived: the player on this team with is_captain=True
     created_at: datetime
     updated_at: datetime
 
@@ -262,24 +309,3 @@ class DashboardSummary(BaseModel):
     average_player_rating: float
     top_player_value_rands: int
     top_player_name: str | None = None
-
-class CoachIn(BaseModel):
-    """Nested coach payload sent as part of a team create/update."""
-    first_name: str
-    last_name: str
-    nationality: str | None = None
-    date_of_birth: date | None = None
-    photo_url: str | None = None
-    appointed_date: date | None = None
-
-
-class CoachOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    first_name: str
-    last_name: str
-    nationality: str | None = None
-    date_of_birth: date | None = None
-    photo_url: str | None = None
-    appointed_date: date | None = None

@@ -64,6 +64,16 @@ nav.links a.active{
   .hero{position:relative; padding:0 0 40px; overflow:hidden;}
   .pitch-bg{position:absolute; inset:0; z-index:0; opacity:0.9;}
   .hero-inner{position:relative; z-index:1; text-align:center; padding:96px 32px 64px;}
+
+  /* FIX: the ticker + quicknav live inside .hero > .wrap, which had no
+     `position` set. Per CSS stacking rules, non-positioned in-flow content
+     paints BEFORE a positioned z-index:0 layer, so .pitch-bg (the pitch-line
+     SVG, position:absolute + z-index:0) was painting on top of this content
+     and washing it out ("fainted") at every viewport width - the effect just
+     looked more/less obvious depending on how the SVG scaled at that width.
+     Giving .wrap its own stacking context above the SVG fixes it everywhere. */
+  .hero > .wrap{position:relative; z-index:2;}
+
   .eyebrow{font-family:var(--mono); font-size:12px; letter-spacing:3px; text-transform:uppercase; color:var(--ink-soft); margin-bottom:24px;}
   .wordmark{font-family:var(--display); font-weight:700; font-size:clamp(64px,14vw,148px); line-height:0.9; letter-spacing:-2px; margin:0;}
   .tagline{font-family:var(--mono); font-size:14px; letter-spacing:4px; text-transform:uppercase; color:var(--ink-soft); margin-top:20px;}
@@ -111,6 +121,15 @@ nav.links a.active{
   .legend span{display:flex; align-items:center; gap:6px;}
   .dot{width:9px; height:9px; border-radius:50%;}
 
+  /* SEASON FILTER (table.html) */
+  .table-controls{display:flex; justify-content:flex-end; margin-bottom:16px;}
+  .table-controls select{
+    font-family:var(--sans); font-size:13px; color:var(--ink);
+    background:#fff; border:1px solid var(--line); border-radius:10px;
+    padding:9px 14px; outline:none; cursor:pointer;
+  }
+  .table-controls select:focus{border-color:var(--ink); box-shadow:0 0 0 3px rgba(17,17,17,0.06);}
+
   /* NEWS */
   .news-grid{display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line);}
   .news-card{background:var(--paper); padding:28px;}
@@ -154,9 +173,11 @@ nav.links a.active{
   .card-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:18px; margin-top:24px;}
   .detail-card{background:#fff; border:1px solid var(--line); border-radius:16px; padding:24px; box-shadow:0 10px 30px rgba(17,17,17,0.03);}
 
-  /* CLUB CARDS - fixed max width via auto-fill so a single/few cards stay
-     square-ish instead of stretching to fill the row like auto-fit+1fr does */
-  .club-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 300px)); gap:18px; margin-top:24px;}
+  /* CLUB CARDS - auto-fit + 1fr so cards stretch to use the full row width
+     on wide screens instead of capping at 300px and leaving empty space
+     (auto-fill + a hard max-width was the old approach; traded that off
+     for better space usage now that the grid regularly has many teams) */
+  .club-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:18px; margin-top:24px;}
   .club-card{
     background:#fff; border:1px solid var(--line); border-radius:16px; padding:22px;
     box-shadow:0 10px 30px rgba(17,17,17,0.03); display:flex; flex-direction:column; gap:16px;
@@ -191,6 +212,27 @@ nav.links a.active{
   }
   .search-shell input:focus{border-color:var(--ink); box-shadow:0 0 0 3px rgba(17,17,17,0.06);}
   .search-shell input::placeholder{color:var(--ink-soft);}
+
+  /* CONFIRM MODAL (admin dashboard) */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(17,17,17,0.45);
+    display:flex; align-items:center; justify-content:center;
+    z-index:1000; padding:20px;
+  }
+  .modal-card{
+    background:#fff; border-radius:16px; padding:26px; max-width:400px; width:100%;
+    box-shadow:0 20px 50px rgba(0,0,0,0.18);
+  }
+  .modal-card h3{font-family:var(--display); font-size:19px; margin:0 0 10px;}
+  .modal-card p{font-size:14px; color:var(--ink-soft); line-height:1.6; margin:0 0 22px;}
+  .modal-actions{display:flex; justify-content:flex-end; gap:10px;}
+  .modal-actions button.danger{background:var(--red);}
+
+  /* Inline form validation banner - reuses the login-error look */
+  .form-alert{
+    grid-column:1/-1; background:#fdeeee; color:var(--red); border:1px solid #f4c9c9;
+    border-radius:10px; padding:10px 12px; font-size:13px;
+  }
 
   @media (max-width:760px){
     .navbar{height:64px;}

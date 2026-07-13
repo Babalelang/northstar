@@ -1,3 +1,38 @@
+
+function highlightActiveNav() {
+
+  const rawSegments = window.location.pathname.split(/[\\/]/).filter(Boolean);
+  let path = (rawSegments.pop() || 'index.html').split(/[?#]/)[0].toLowerCase();
+  if (!path) path = 'index.html';
+
+  path = path.replace(/\.html$/, '');
+
+  const homeAliases = ['', 'index', 'vuva'];
+  let matched = false;
+
+  document.querySelectorAll('nav.links a').forEach((link) => {
+    const hrefRaw = (link.getAttribute('href') || '').toLowerCase();
+    if (!hrefRaw) return;
+    const href = hrefRaw.replace(/\.html$/, '');
+    const isActive = href === path || (href === 'index' && homeAliases.includes(path));
+    link.classList.toggle('active', isActive);
+    if (isActive) matched = true;
+  });
+
+  if (!matched) {
+
+    console.warn('[VUVA] highlightActiveNav: no nav link matched current path', {
+      pathname: window.location.pathname,
+      resolvedPath: path,
+    });
+  }
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', highlightActiveNav);
+} else {
+  highlightActiveNav();
+}
+
 const API_BASE = "http://127.0.0.1:8000/api";
 
 // Auth token lives in localStorage so a page refresh doesn't log the
