@@ -222,6 +222,30 @@
     .mv-table-head h3{ font-family:var(--display); font-size:18px; font-weight:600; margin:0; }
     .mv-table-note{ font-family:var(--mono); font-size:11px; color:var(--ink-soft); }
 
+    /* --- Search --- */
+    .mv-search-row{ margin:16px 0 18px; }
+    .mv-search-wrap{ position:relative; max-width:340px; }
+    .mv-search-wrap svg{
+      position:absolute; left:13px; top:50%; transform:translateY(-50%);
+      width:15px; height:15px; color:var(--ink-soft); pointer-events:none;
+    }
+    .mv-search-input{
+      width:100%; box-sizing:border-box; font-family:var(--mono); font-size:12.5px;
+      padding:10px 34px 10px 36px; border:1px solid var(--line); border-radius:10px;
+      background:var(--paper-2); color:var(--ink); outline:none;
+      transition:border-color .15s, background .15s;
+    }
+    .mv-search-input::placeholder{ color:var(--ink-soft); }
+    .mv-search-input:focus{ border-color:var(--ink); background:#fff; }
+    .mv-search-clear{
+      position:absolute; right:8px; top:50%; transform:translateY(-50%);
+      width:20px; height:20px; border:none; background:none; cursor:pointer;
+      color:var(--ink-soft); display:none; align-items:center; justify-content:center;
+      border-radius:50%;
+    }
+    .mv-search-clear:hover{ background:var(--line); color:var(--ink); }
+    .mv-search-clear.visible{ display:flex; }
+
     /* --- Pagination --- */
     .mv-pagination{ display:flex; align-items:center; justify-content:center; gap:6px; margin-top:22px; flex-wrap:wrap; }
     .mv-page-btn{
@@ -241,6 +265,7 @@
       .dist-label{ width:70px; }
       .dist-val{ width:90px; }
       .dist-count{ display:none; }
+      .mv-search-wrap{ max-width:none; }
     }
   </style>
 </head>
@@ -301,6 +326,17 @@
         <h3>Full list</h3>
         <span class="mv-table-note" id="mv-table-note"></span>
       </div>
+
+      <div class="mv-search-row">
+        <div class="mv-search-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" id="mv-search" class="mv-search-input" placeholder="Search player or club…" autocomplete="off" />
+          <button type="button" id="mv-search-clear" class="mv-search-clear" aria-label="Clear search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+      </div>
+
       <table class="mv">
         <thead><tr><th>#</th><th>Player</th><th>Club</th><th>Position</th><th style="text-align:right">Value</th></tr></thead>
         <tbody id="mv-body"></tbody>
@@ -316,6 +352,7 @@
     const PAGE_SIZE = 10;
     let marketValues = [];
     let currentPage = 1;
+    let searchQuery = '';
 
     const POSITION_GROUPS = {
       gk: { label: 'Goalkeeper', group: 'GK', color: 'var(--gold)', pill: 'pos-gk' },
@@ -438,9 +475,9 @@
       return Array.from(pages).filter((p) => p >= 1 && p <= total).sort((a, b) => a - b);
     }
 
-    function renderPagination(rest) {
+    function renderPagination(list) {
       const el = document.getElementById('mv-pagination');
-      const totalPages = Math.max(1, Math.ceil(rest.length / PAGE_SIZE));
+      const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
       if (totalPages <= 1) { el.innerHTML = ''; return; }
 
       const pages = getPageNumbers(currentPage, totalPages);
@@ -464,26 +501,46 @@
       });
     }
 
+    function matchesSearch(m) {
+      if (!searchQuery) return true;
+      const q = searchQuery.toLowerCase();
+      return m.name.toLowerCase().includes(q) || m.club.toLowerCase().includes(q);
+    }
+
     function renderTable() {
       const body = document.getElementById('mv-body');
       const note = document.getElementById('mv-table-note');
-      const rest = marketValues.slice(3); // top 3 already shown on the podium
+      const isSearching = searchQuery.length > 0;
 
-      if (!rest.length) {
-        body.innerHTML = marketValues.length
-          ? '<tr><td colspan="5" class="note">Everything tracked is already shown in the podium above.</td></tr>'
-          : '<tr><td colspan="5" class="note">No player valuations yet — add players in the admin panel.</td></tr>';
-        note.textContent = '';
-        renderPagination(rest);
+      // When not searching: top 3 already shown on the podium, so the table
+      // starts at rank 4. When searching, search the full list (top 3 included)
+      // since the person is looking for someone specific, not browsing the podium.
+      const list = isSearching ? marketValues.filter(matchesSearch) : marketValues.slice(3);
+
+      if (!list.length) {
+        if (isSearching) {
+          body.innerHTML = `<tr><td colspan="5" class="note">No players match "${escapeHtml(searchQuery)}".</td></tr>`;
+          note.textContent = '0 results';
+        } else {
+          body.innerHTML = marketValues.length
+            ? '<tr><td colspan="5" class="note">Everything tracked is already shown in the podium above.</td></tr>'
+            : '<tr><td colspan="5" class="note">No player valuations yet — add players in the admin panel.</td></tr>';
+          note.textContent = '';
+        }
+        renderPagination(list);
         return;
       }
 
-      const totalPages = Math.max(1, Math.ceil(rest.length / PAGE_SIZE));
+      const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
       currentPage = Math.min(currentPage, totalPages);
       const start = (currentPage - 1) * PAGE_SIZE;
-      const pageItems = rest.slice(start, start + PAGE_SIZE);
+      const pageItems = list.slice(start, start + PAGE_SIZE);
 
-      note.textContent = `Showing ${start + 4}–${start + pageItems.length + 3} of ${marketValues.length}`;
+      if (isSearching) {
+        note.textContent = `${list.length} match${list.length === 1 ? '' : 'es'} for "${searchQuery}"`;
+      } else {
+        note.textContent = `Showing ${start + 4}–${start + pageItems.length + 3} of ${marketValues.length}`;
+      }
 
       body.innerHTML = pageItems.map((m) => {
         const info = posInfo(m.pos);
@@ -498,8 +555,27 @@
         `;
       }).join('');
 
-      renderPagination(rest);
+      renderPagination(list);
     }
+
+    const searchInput = document.getElementById('mv-search');
+    const searchClear = document.getElementById('mv-search-clear');
+
+    searchInput.addEventListener('input', (e) => {
+      searchQuery = e.target.value.trim();
+      searchClear.classList.toggle('visible', searchQuery.length > 0);
+      currentPage = 1;
+      renderTable();
+    });
+
+    searchClear.addEventListener('click', () => {
+      searchQuery = '';
+      searchInput.value = '';
+      searchClear.classList.remove('visible');
+      currentPage = 1;
+      renderTable();
+      searchInput.focus();
+    });
 
     async function loadMarket() {
       const mvBody = document.getElementById('mv-body');
