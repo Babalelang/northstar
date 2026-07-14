@@ -269,18 +269,7 @@ function showPage(id) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-if (document.querySelectorAll("nav.links a").length) {
-  document.querySelectorAll("nav.links a").forEach((link) => {
-    link.addEventListener("click", (event) => {
-      const href = link.getAttribute("href");
-      if (href && href.endsWith('.html')) {
-        return;
-      }
-      event.preventDefault();
-      showPage(link.dataset.page || link.getAttribute("href"));
-    });
-  });
-}
+
 
 document.querySelectorAll(".qn-card").forEach((card) => {
   card.addEventListener("click", () => showPage(card.dataset.goto));
