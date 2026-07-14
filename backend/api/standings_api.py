@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 
+from api.deps import get_current_user
 from database.database import get_db
 from models import Competition, Season, Standing
+from models.user import User
 from schemas.standings import StandingOut, SyncResponse
 from services.sync_service import sync_standings_from_fixtures
 
@@ -45,7 +47,12 @@ def read_standings(
 
 
 @router.post("/recompute", response_model=SyncResponse)
-def recompute_standings(season_id: int, competition_id: int, db: Session = Depends(get_db)):
+def recompute_standings(
+    season_id: int,
+    competition_id: int,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
     """Rebuilds the table for a season/competition from the full-time
     fixtures already stored in our own database - no outside service
     involved. Safe to call repeatedly; existing rows are updated in

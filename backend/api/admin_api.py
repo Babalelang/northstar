@@ -195,7 +195,12 @@ def create_player(payload: PlayerCreate, db: Session = Depends(get_db)):
         clearances=payload.clearances,
         form_rating=payload.form_rating,
     )
-    apply_player_metrics(item, override_rands=payload.market_value_rands)
+    apply_player_metrics(
+    item,
+    override_rands=payload.market_value_rands,
+    override_overall=payload.overall_rating,
+    override_potential=payload.potential_rating,
+)
     db.add(item)
     db.flush()  # get item.id before touching captain exclusivity
 
@@ -236,7 +241,12 @@ def update_player(player_id: int, payload: PlayerUpdate, db: Session = Depends(g
     item.interceptions = payload.interceptions
     item.clearances = payload.clearances
     item.form_rating = payload.form_rating
-    apply_player_metrics(item, override_rands=payload.market_value_rands,override_overall=payload.overall_rating)
+    apply_player_metrics(
+    item,
+    override_rands=payload.market_value_rands,
+    override_overall=payload.overall_rating,
+    override_potential=payload.potential_rating,
+)
 
     if payload.is_captain:
         PlayersService.clear_other_captains(db, team_id=item.team_id, keep_player_id=item.id)

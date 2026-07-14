@@ -54,9 +54,9 @@
             ? `${f.home_score} – ${f.away_score}` : 'vs';
           return `
             <article class="detail-card">
-              <div class="news-tag">${fmtKickoff(f.match_datetime)} · ${STATUS_LABEL[f.status] || f.status}</div>
-              <div class="news-head">${f.home_team.name} ${score} ${f.away_team.name}</div>
-              <p class="news-body">${f.venue_name || 'Venue TBC'}${f.round_name ? ' · ' + f.round_name : ''}${f.matchweek ? ' · Matchweek ' + f.matchweek : ''}</p>
+              <div class="news-tag">${escapeHtml(fmtKickoff(f.match_datetime))} · ${escapeHtml(STATUS_LABEL[f.status] || f.status)}</div>
+              <div class="news-head">${escapeHtml(f.home_team.name)} ${escapeHtml(score)} ${escapeHtml(f.away_team.name)}</div>
+              <p class="news-body">${escapeHtml(f.venue_name || 'Venue TBC')}${f.round_name ? ' · ' + escapeHtml(f.round_name) : ''}${f.matchweek ? ' · Matchweek ' + escapeHtml(String(f.matchweek)) : ''}</p>
             </article>`;
         }).join('');
       } catch (err) {

@@ -67,10 +67,10 @@ function formatRand(marketValueRands) {
 }
     function clubLogo(team) {
       if (team.logo_url) {
-        return `<img class="club-logo-img" src="${team.logo_url}" alt="${team.name} logo"
-                  onerror="this.outerHTML = '<div class=\\'club-logo-fallback\\' style=\\'background:${avatarColor(team.name)}\\'>${initials(team.name)}</div>'" />`;
+        return `<img class="club-logo-img" src="${safeUrl(team.logo_url)}" alt="${escapeHtml(team.name)} logo"
+                  onerror="this.outerHTML = '<div class=\\'club-logo-fallback\\' style=\\'background:${avatarColor(team.name)}\\'>${escapeHtml(initials(team.name))}</div>'" />`;
       }
-      return `<div class="club-logo-fallback" style="background:${avatarColor(team.name)}">${initials(team.name)}</div>`;
+      return `<div class="club-logo-fallback" style="background:${avatarColor(team.name)}">${escapeHtml(initials(team.name))}</div>`;
     }
 
     function coachName(team) {
@@ -92,7 +92,7 @@ function formatRand(marketValueRands) {
 
 function statRow(label, value) {
   if (!value) return '';
-  return `<li><span class="club-stat-label">${label}</span><span class="club-stat-value">${value}</span></li>`;
+  return `<li><span class="club-stat-label">${label}</span><span class="club-stat-value">${escapeHtml(value)}</span></li>`;
 }
 
     let allTeams = [];
@@ -108,8 +108,8 @@ function statRow(label, value) {
           <div class="club-card-top">
             ${clubLogo(team)}
             <div>
-              <div class="club-name">${team.name}</div>
-              <div class="club-loc">${[team.city, team.country].filter(Boolean).join(', ') || 'Location unknown'}</div>
+              <div class="club-name">${escapeHtml(team.name)}</div>
+              <div class="club-loc">${escapeHtml([team.city, team.country].filter(Boolean).join(', ') || 'Location unknown')}</div>
             </div>
           </div>
           <ul class="club-stats">
@@ -120,7 +120,7 @@ function statRow(label, value) {
             ${statRow('Market value', formatRand(team.market_value_rands))}
             ${statRow('Squad rating', team.average_rating ? Number(team.average_rating).toFixed(1) : null)}
           </ul>
-          ${team.website ? `<a class="club-link" href="${team.website}" target="_blank" rel="noopener">Official site &rarr;</a>` : ''}
+          ${team.website ? `<a class="club-link" href="${safeUrl(team.website)}" target="_blank" rel="noopener">Official site &rarr;</a>` : ''}
         </article>
       `).join('');
     }

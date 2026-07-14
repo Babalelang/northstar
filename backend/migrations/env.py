@@ -1,3 +1,4 @@
+import os
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
@@ -18,10 +19,16 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-from database.database import Base
+from database.database import Base, DATABASE_URL
 import models
 
 target_metadata = Base.metadata
+
+# Override whatever (if anything) is in alembic.ini with the real URL from
+# the environment - keeps the actual credential out of the version-controlled
+# .ini file and in sync with the one the app itself connects with.
+if DATABASE_URL:
+    config.set_main_option("sqlalchemy.url", DATABASE_URL)
 
 
 # other values from the config, defined by the needs of env.py,

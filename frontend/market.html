@@ -368,15 +368,15 @@
     function podiumCard(m, rank) {
       const info = posInfo(m.pos);
       const photo = m.photoUrl
-        ? `<img src="${m.photoUrl}" alt="" class="podium-photo" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'podium-photo podium-photo-fallback',textContent:'${initials(m.name)}'}))" />`
-        : `<div class="podium-photo podium-photo-fallback">${initials(m.name)}</div>`;
+        ? `<img src="${safeUrl(m.photoUrl)}" alt="" class="podium-photo" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'podium-photo podium-photo-fallback',textContent:'${initials(m.name)}'}))" />`
+        : `<div class="podium-photo podium-photo-fallback">${escapeHtml(initials(m.name))}</div>`;
       return `
         <div class="podium-card rank-${rank}">
           ${waveSvg()}
           <div class="podium-medal">${rank}</div>
           ${photo}
-          <div class="podium-name">${m.name}</div>
-          <div class="podium-club">${m.club}</div>
+          <div class="podium-name">${escapeHtml(m.name)}</div>
+          <div class="podium-club">${escapeHtml(m.club)}</div>
           <div class="podium-value">${fmtRands(m.valueRands)}</div>
         </div>
       `;
@@ -490,9 +490,9 @@
         return `
           <tr>
             <td class="rank">${m.rank}</td>
-            <td class="name">${m.name}</td>
-            <td class="club">${m.club}</td>
-            <td><span class="pos-pill ${info.pill}">${m.pos}</span></td>
+            <td class="name">${escapeHtml(m.name)}</td>
+            <td class="club">${escapeHtml(m.club)}</td>
+            <td><span class="pos-pill ${info.pill}">${escapeHtml(m.pos)}</span></td>
             <td class="val" style="text-align:right">${fmtRands(m.valueRands)}</td>
           </tr>
         `;

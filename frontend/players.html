@@ -10,24 +10,17 @@
   <link rel="stylesheet" href="style.css" />
   <style>
     /* ---- page-local additions, built on top of style.css tokens ---- */
-/* Prevent rating circle from shrinking and cutting numbers */
-.pcard-rating,
-.player-rating,
-.rating-circle {
-    flex-shrink: 0;
-    width: 52px;
-    height: 52px;
-    min-width: 52px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: visible;
-}
     .players-head{
       display:flex; align-items:flex-end; justify-content:space-between; gap:24px; flex-wrap:wrap;
-      margin-bottom:28px;
+      margin-bottom:10px;
     }
+    .players-hint{
+      display:flex; align-items:center; gap:8px;
+      font-family:var(--mono); font-size:11.5px; color:var(--ink-soft);
+      text-transform:uppercase; letter-spacing:0.5px;
+      margin-bottom:26px;
+    }
+    .players-hint svg{width:13px; height:13px; flex-shrink:0;}
     .search-shell{
       position:relative; width:100%; max-width:340px;
     }
@@ -95,37 +88,120 @@
     .folder-name{font-family:var(--display); font-weight:600; font-size:15px; line-height:1.25;}
     .folder-count{font-family:var(--mono); font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.5px;}
 
-    /* player card additions */
-    .pcard-top{gap:14px;}
-    .pcard-photo-wrap{flex-shrink:0;}
-    .pcard-photo{
-      width:52px; height:52px; border-radius:50%; object-fit:cover;
-      background:var(--paper-2); border:1px solid var(--line);
+    /* ---- simplified player card: photo + name + position, nothing else ---- */
+    .player-grid{
+      display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:18px;
     }
-    .pcard-photo-fallback{
-      width:52px; height:52px; border-radius:50%; color:#fff;
+    .pcard-mini{
+      position:relative; cursor:pointer; background:#fff; border:1px solid var(--line);
+      border-radius:14px; padding:22px 16px 18px; text-align:center;
+      display:flex; flex-direction:column; align-items:center; gap:12px;
+      transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    }
+    .pcard-mini:hover{transform:translateY(-4px); box-shadow:0 14px 28px rgba(17,17,17,0.07); border-color:var(--ink);}
+    .pcard-mini:focus-visible{outline:2px solid var(--ink); outline-offset:3px;}
+    .pcard-mini-photo-wrap{position:relative; flex-shrink:0;}
+    .pcard-mini-photo{
+      width:76px; height:76px; border-radius:50%; object-fit:cover;
+      background:var(--paper-2); border:1px solid var(--line); display:block;
+    }
+    .pcard-mini-photo-fallback{
+      width:76px; height:76px; border-radius:50%; color:#fff;
       display:flex; align-items:center; justify-content:center;
-      font-family:var(--display); font-weight:700; font-size:16px;
+      font-family:var(--display); font-weight:700; font-size:22px;
     }
-    .pcard-name-block{display:flex; align-items:center; gap:12px; flex:1; min-width:0;}
-    .pcard-name-block > div{min-width:0; width:100%;}
-    .pcard-name{white-space:normal; overflow-wrap: break-word; text-overflow:unset; max-width:100%; line-height:1.15;}
-    .pcard-role{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;}
-    .pcard-team-tag{
-      font-family:var(--mono); font-size:10.5px; color:var(--green); text-transform:uppercase;
-      letter-spacing:0.5px; margin-top:4px;
+    .pcard-mini-badge{
+      position:absolute; bottom:-4px; right:-4px;
+      width:26px; height:26px; border-radius:50%;
+      background:var(--ink); color:#fff;
+      display:flex; align-items:center; justify-content:center;
+      font-family:var(--display); font-weight:700; font-size:11px;
+      border:2px solid #fff;
     }
-
-    .stat-row{display:flex; gap:8px; margin-top:14px;}
-    .stat-box{flex:1; background:var(--paper-2); border-radius:8px; padding:10px 6px; text-align:center;}
-    .stat-val{font-family:var(--display); font-weight:700; font-size:17px;}
-    .stat-lab{font-family:var(--mono); font-size:9.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.5px; margin-top:2px;}
+    .pcard-mini-name{font-family:var(--display); font-weight:600; font-size:14.5px; line-height:1.25; overflow-wrap:break-word;}
+    .pcard-mini-role{
+      font-family:var(--mono); font-size:10.5px; color:var(--ink-soft);
+      text-transform:uppercase; letter-spacing:0.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;
+    }
+    .pcard-mini-team{
+      font-family:var(--mono); font-size:10px; color:var(--green); text-transform:uppercase;
+      letter-spacing:0.5px; margin-top:-4px;
+    }
+    .pcard-mini-more{
+      font-family:var(--mono); font-size:10px; color:var(--ink-soft);
+      text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:4px;
+      margin-top:2px;
+    }
+    .pcard-mini-more svg{width:11px; height:11px;}
 
     .empty-state{
       background:#fff; border:1px solid var(--line); border-radius:16px; padding:40px 24px; text-align:center;
       grid-column:1/-1;
     }
     .empty-state .news-head{margin-bottom:8px;}
+
+    /* ---- stats modal ---- */
+    .modal-overlay{
+      position:fixed; inset:0; background:rgba(17,17,17,0.5);
+      display:flex; align-items:center; justify-content:center; padding:24px;
+      z-index:1000; opacity:0; pointer-events:none; transition:opacity .15s ease;
+    }
+    .modal-overlay.open{opacity:1; pointer-events:auto;}
+    .modal-card{
+      background:#fff; border-radius:20px; width:100%; max-width:460px;
+      max-height:88vh; overflow-y:auto;
+      transform:translateY(12px) scale(0.98); transition:transform .18s ease;
+      box-shadow:0 30px 60px rgba(17,17,17,0.25);
+    }
+    .modal-overlay.open .modal-card{transform:translateY(0) scale(1);}
+    .modal-close{
+      position:absolute; top:16px; right:16px; width:32px; height:32px; border-radius:50%;
+      background:var(--paper-2); border:1px solid var(--line); cursor:pointer;
+      display:flex; align-items:center; justify-content:center; color:var(--ink);
+    }
+    .modal-close:hover{background:var(--ink); color:#fff; border-color:var(--ink);}
+    .modal-head{
+      position:relative; padding:32px 28px 22px; display:flex; align-items:center; gap:16px;
+      border-bottom:1px solid var(--line);
+    }
+    .modal-photo{
+      width:72px; height:72px; border-radius:50%; object-fit:cover; flex-shrink:0;
+      background:var(--paper-2); border:1px solid var(--line);
+    }
+    .modal-photo-fallback{
+      width:72px; height:72px; border-radius:50%; color:#fff; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center;
+      font-family:var(--display); font-weight:700; font-size:22px;
+    }
+    .modal-name{font-family:var(--display); font-weight:700; font-size:21px; line-height:1.2;}
+    .modal-sub{font-family:var(--mono); font-size:11.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.5px; margin-top:5px;}
+    .modal-body{padding:24px 28px 30px;}
+    .modal-section-label{
+      font-family:var(--mono); font-size:10.5px; color:var(--ink-soft); text-transform:uppercase;
+      letter-spacing:0.6px; margin-bottom:12px;
+    }
+    .modal-section + .modal-section{margin-top:26px;}
+    .modal-bars{display:flex; flex-direction:column; gap:10px; margin-bottom:6px;}
+    .modal-stat-grid{
+      display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;
+    }
+    .modal-stat-box{background:var(--paper-2); border-radius:10px; padding:12px 8px; text-align:center;}
+    .modal-stat-val{font-family:var(--display); font-weight:700; font-size:19px;}
+    .modal-stat-lab{font-family:var(--mono); font-size:9px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.5px; margin-top:3px;}
+    .modal-bio-list{display:flex; flex-direction:column; gap:9px;}
+    .modal-bio-row{
+      display:flex; justify-content:space-between; align-items:center;
+      font-family:var(--sans); font-size:13.5px; padding-bottom:9px; border-bottom:1px solid var(--line);
+    }
+    .modal-bio-row:last-child{border-bottom:none; padding-bottom:0;}
+    .modal-bio-row span:first-child{color:var(--ink-soft);}
+    .modal-bio-row span:last-child{font-weight:600;}
+    .modal-value-strip{
+      display:flex; justify-content:space-between; align-items:center;
+      background:var(--ink); color:#fff; border-radius:12px; padding:14px 18px; margin-top:24px;
+    }
+    .modal-value-strip span:first-child{font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:0.5px; opacity:0.7;}
+    .modal-value-strip span:last-child{font-family:var(--display); font-weight:700; font-size:18px;}
   </style>
 </head>
 <body>
@@ -156,10 +232,24 @@
         <input id="player-search" type="text" placeholder="Search players..." autocomplete="off" />
       </div>
     </div>
+    <div class="players-hint">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 9a3 3 0 1 1 4 2.82V14"/><circle cx="12" cy="17.5" r="0.5" fill="currentColor"/><circle cx="12" cy="12" r="10"/></svg>
+      <span>Click on a player's card to reveal their full stats</span>
+    </div>
 
     <div id="crumb"></div>
     <div id="content"></div>
   </main>
+
+  <!-- stats modal -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal-card" id="modal-card" role="dialog" aria-modal="true">
+      <button class="modal-close" id="modal-close" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <div id="modal-content"></div>
+    </div>
+  </div>
 
   <script src="api.js"></script>
   <script>
@@ -170,6 +260,8 @@
     const contentEl = document.getElementById('content');
     const crumbEl = document.getElementById('crumb');
     const searchEl = document.getElementById('player-search');
+    const modalOverlay = document.getElementById('modal-overlay');
+    const modalContent = document.getElementById('modal-content');
 
     function initials(first, last){
       return `${(first || '?')[0]}${(last || '')[0] || ''}`.toUpperCase();
@@ -196,55 +288,53 @@
       return Math.floor(diffMs / (365.25 * 24 * 3600 * 1000));
     }
 
-    function playerPhoto(player){
+    // Matches "GK", "Goalkeeper", "Keeper" etc, case-insensitively.
+    // Everything else (CB, LB, CDM, CM, ST, ...) is treated as outfield.
+    function isGoalkeeperPosition(position){
+      const p = (position || '').trim().toLowerCase();
+      return p === 'gk' || p.includes('goalkeeper') || p.includes('keeper');
+    }
+
+    function formatDate(dob){
+      if (!dob) return null;
+      const d = new Date(dob);
+      if (isNaN(d)) return null;
+      return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+    }
+
+    // ---- mini card (grid view) ----
+    function miniPhoto(player){
       if (player.photo_url) {
-        return `<img class="pcard-photo" src="${player.photo_url}" alt="${player.first_name} ${player.last_name}"
-                 onerror="this.outerHTML='<div class=&quot;pcard-photo-fallback&quot; style=&quot;background:${hashColor(player.first_name + player.last_name)}&quot;>${initials(player.first_name, player.last_name)}</div>'">`;
+        return `<img class="pcard-mini-photo" src="${safeUrl(player.photo_url)}" alt="${escapeHtml(player.first_name)} ${escapeHtml(player.last_name)}"
+                 onerror="this.outerHTML='<div class=&quot;pcard-mini-photo-fallback&quot; style=&quot;background:${hashColor(player.first_name + player.last_name)}&quot;>${escapeHtml(initials(player.first_name, player.last_name))}</div>'">`;
       }
-      return `<div class="pcard-photo-fallback" style="background:${hashColor(player.first_name + player.last_name)}">${initials(player.first_name, player.last_name)}</div>`;
+      return `<div class="pcard-mini-photo-fallback" style="background:${hashColor(player.first_name + player.last_name)}">${escapeHtml(initials(player.first_name, player.last_name))}</div>`;
     }
 
     function clubLogo(team){
       if (team.logo_url) {
-        return `<img class="folder-logo-img" src="${team.logo_url}" alt="${team.name}"
-                 onerror="this.outerHTML='<div class=&quot;folder-logo-fallback&quot; style=&quot;background:${hashColor(team.name)}&quot;>${(team.short_name || team.name).slice(0,3).toUpperCase()}</div>'">`;
+        return `<img class="folder-logo-img" src="${safeUrl(team.logo_url)}" alt="${escapeHtml(team.name)}"
+                 onerror="this.outerHTML='<div class=&quot;folder-logo-fallback&quot; style=&quot;background:${hashColor(team.name)}&quot;>${escapeHtml((team.short_name || team.name).slice(0,3).toUpperCase())}</div>'">`;
       }
-      return `<div class="folder-logo-fallback" style="background:${hashColor(team.name)}">${(team.short_name || team.name).slice(0,3).toUpperCase()}</div>`;
+      return `<div class="folder-logo-fallback" style="background:${hashColor(team.name)}">${escapeHtml((team.short_name || team.name).slice(0,3).toUpperCase())}</div>`;
     }
 
-    function bar(label, val, max){
-      max = max || 100;
-      const pct = Math.max(0, Math.min(100, (val / max) * 100));
-      const display = Number.isInteger(val) ? val : Math.round(val * 10) / 10;
-      return `<div class="skill-row"><div class="skill-label">${label}</div><div class="skill-bar"><div class="skill-fill" style="width:${pct}%"></div></div><div class="skill-val">${display}</div></div>`;
-    }
-
-    function playerCard(player, opts){
+    function playerCardMini(player, opts){
       const showTeam = opts && opts.showTeam;
-      const age = getAge(player.date_of_birth);
+      const rating = player.overall_rating != null ? Math.round(player.overall_rating) : null;
       return `
-        <div class="pcard">
-          <div class="pcard-top">
-            <div class="pcard-photo-wrap">${playerPhoto(player)}</div>
-            <div class="pcard-name-block">
-              <div>
-                <div class="pcard-name">${player.first_name} ${player.last_name}</div>
-                <div class="pcard-role">${player.playing_position.toUpperCase()}${age ? ' · ' + age : ''}</div>
-                ${showTeam ? `<div class="pcard-team-tag">${player.team_name || 'Unattached'}</div>` : ''}
-              </div>
-            </div>
-            <div class="pcard-index">${player.overall_rating != null ? Math.round(player.overall_rating) : '-'}</div>
+        <div class="pcard-mini" data-player-id="${player.id}" tabindex="0" role="button" aria-label="View stats for ${escapeHtml(player.first_name)} ${escapeHtml(player.last_name)}">
+          <div class="pcard-mini-photo-wrap">
+            ${miniPhoto(player)}
+            ${rating != null ? `<div class="pcard-mini-badge">${rating}</div>` : ''}
           </div>
-          <div class="pcard-body">
-            ${bar('Form', player.form_rating != null ? player.form_rating : 7, 10)}
-            ${bar('Potential', player.potential_rating != null ? player.potential_rating : 70, 100)}
-            <div class="stat-row">
-              <div class="stat-box"><div class="stat-val">${player.goals || 0}</div><div class="stat-lab">Goals</div></div>
-              <div class="stat-box"><div class="stat-val">${player.assists || 0}</div><div class="stat-lab">Assists</div></div>
-              <div class="stat-box"><div class="stat-val">${player.minutes_played || 0}</div><div class="stat-lab">Minutes</div></div>
-            </div>
+          <div class="pcard-mini-name">${escapeHtml(player.first_name)} ${escapeHtml(player.last_name)}</div>
+          <div class="pcard-mini-role">${escapeHtml((player.playing_position || '').toUpperCase())}</div>
+          ${showTeam ? `<div class="pcard-mini-team">${escapeHtml(player.team_name || 'Unattached')}</div>` : ''}
+          <div class="pcard-mini-more">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            View stats
           </div>
-          <div class="pcard-foot"><span>Market value</span><span>${formatRands(player.market_value_rands)}</span></div>
         </div>
       `;
     }
@@ -261,9 +351,134 @@
         `;
         return;
       }
-      contentEl.innerHTML = `<div class="player-grid">${list.map(p => playerCard(p, opts)).join('')}</div>`;
+      contentEl.innerHTML = `<div class="player-grid">${list.map(p => playerCardMini(p, opts)).join('')}</div>`;
+      contentEl.querySelectorAll('.pcard-mini').forEach(el => {
+        const open = () => openPlayerModal(Number(el.dataset.playerId));
+        el.addEventListener('click', open);
+        el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+      });
     }
 
+    // ---- stats modal ----
+    function bar(label, val, max){
+      max = max || 100;
+      const pct = Math.max(0, Math.min(100, (val / max) * 100));
+      const display = Number.isInteger(val) ? val : Math.round(val * 10) / 10;
+      return `<div class="skill-row"><div class="skill-label">${label}</div><div class="skill-bar"><div class="skill-fill" style="width:${pct}%"></div></div><div class="skill-val">${display}</div></div>`;
+    }
+
+    function statBox(val, label){
+      return `<div class="modal-stat-box"><div class="modal-stat-val">${val != null ? val : 0}</div><div class="modal-stat-lab">${label}</div></div>`;
+    }
+
+    function bioRow(label, val){
+      if (val === null || val === undefined || val === '') return '';
+      return `<div class="modal-bio-row"><span>${label}</span><span>${val}</span></div>`;
+    }
+
+    function openPlayerModal(playerId){
+      const player = players.find(p => p.id === playerId);
+      if (!player) return;
+
+      const age = getAge(player.date_of_birth);
+      const dobLabel = formatDate(player.date_of_birth);
+      const photoHtml = player.photo_url
+        ? `<img class="modal-photo" src="${safeUrl(player.photo_url)}" alt="${escapeHtml(player.first_name)} ${escapeHtml(player.last_name)}"
+             onerror="this.outerHTML='<div class=&quot;modal-photo-fallback&quot; style=&quot;background:${hashColor(player.first_name + player.last_name)}&quot;>${escapeHtml(initials(player.first_name, player.last_name))}</div>'">`
+        : `<div class="modal-photo-fallback" style="background:${hashColor(player.first_name + player.last_name)}">${escapeHtml(initials(player.first_name, player.last_name))}</div>`;
+
+      // Which stat block a player sees is decided by POSITION, not by
+      // whether the fields happen to be filled in. This way a defender can
+      // never show goalkeeping numbers (and a keeper never shows tackles),
+      // even if bad data gets entered somewhere upstream.
+      const isGoalkeeper = isGoalkeeperPosition(player.playing_position);
+
+      const gkStats = isGoalkeeper
+        ? `
+          <div class="modal-section">
+            <div class="modal-section-label">Goalkeeping</div>
+            <div class="modal-stat-grid">
+              ${statBox(player.saves, 'Saves')}
+              ${statBox(player.clean_sheets, 'Clean sheets')}
+              ${statBox(player.goals_conceded, 'Conceded')}
+            </div>
+          </div>`
+        : '';
+
+      const defStats = !isGoalkeeper
+        ? `
+          <div class="modal-section">
+            <div class="modal-section-label">Defensive actions</div>
+            <div class="modal-stat-grid">
+              ${statBox(player.tackles, 'Tackles')}
+              ${statBox(player.interceptions, 'Interceptions')}
+              ${statBox(player.clearances, 'Clearances')}
+            </div>
+          </div>`
+        : '';
+
+      modalContent.innerHTML = `
+        <div class="modal-head">
+          ${photoHtml}
+          <div>
+            <div class="modal-name">${escapeHtml(player.first_name)} ${escapeHtml(player.last_name)}${player.is_captain ? ' (C)' : ''}</div>
+            <div class="modal-sub">${escapeHtml((player.playing_position || '').toUpperCase())} · ${escapeHtml(player.team_name || 'Unattached')}</div>
+          </div>
+        </div>
+        <div class="modal-body">
+          <div class="modal-section">
+            <div class="modal-section-label">Ratings</div>
+            <div class="modal-bars">
+              ${player.overall_rating != null ? bar('Overall', player.overall_rating, 100) : ''}
+              ${player.potential_rating != null ? bar('Potential', player.potential_rating, 100) : ''}
+              ${player.form_rating != null ? bar('Form', player.form_rating, 10) : ''}
+            </div>
+          </div>
+
+          <div class="modal-section">
+            <div class="modal-section-label">Season stats</div>
+            <div class="modal-stat-grid">
+              ${statBox(player.goals, 'Goals')}
+              ${statBox(player.assists, 'Assists')}
+              ${statBox(player.minutes_played, 'Minutes')}
+            </div>
+          </div>
+
+          ${gkStats}
+          ${defStats}
+
+          <div class="modal-section">
+            <div class="modal-section-label">Player info</div>
+            <div class="modal-bio-list">
+              ${bioRow('Age', age)}
+              ${bioRow('Date of birth', dobLabel)}
+              ${bioRow('Nationality', player.nationality)}
+              ${bioRow('Height', player.height_cm ? player.height_cm + ' cm' : null)}
+              ${bioRow('Preferred foot', player.preferred_foot ? player.preferred_foot[0].toUpperCase() + player.preferred_foot.slice(1) : null)}
+              ${bioRow('Shirt number', player.club_shirt_number)}
+            </div>
+          </div>
+
+          <div class="modal-value-strip">
+            <span>Market value</span>
+            <span>${formatRands(player.market_value_rands)}</span>
+          </div>
+        </div>
+      `;
+      modalOverlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal(){
+      modalOverlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    document.getElementById('modal-close').addEventListener('click', closeModal);
+    modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+    // ---- folders / roster / search (unchanged navigation logic) ----
     function renderFolders(){
       crumbEl.innerHTML = '';
       if (!teams.length) {
@@ -282,7 +497,7 @@
               <div class="club-folder" data-team-id="${team.id}">
                 ${clubLogo(team)}
                 <div>
-                  <div class="folder-name">${team.name}</div>
+                  <div class="folder-name">${escapeHtml(team.name)}</div>
                   <div class="folder-count">${count} player${count === 1 ? '' : 's'}</div>
                 </div>
               </div>
@@ -307,12 +522,12 @@
         <div class="back-row">
           <button class="back-btn" id="back-btn">&larr; All clubs</button>
           <span class="back-sep">/</span>
-          <span class="back-current">${team.name}</span>
+          <span class="back-current">${escapeHtml(team.name)}</span>
         </div>
         <div class="club-open-head">
           ${clubLogo(team).replace('folder-logo-img', 'folder-logo-img club-open-logo').replace('folder-logo-fallback', 'folder-logo-fallback club-open-logo')}
           <div>
-            <div class="club-open-name">${team.name}</div>
+            <div class="club-open-name">${escapeHtml(team.name)}</div>
             <div class="club-open-count">${players.filter(p => p.team_id === team.id).length} player${players.filter(p => p.team_id === team.id).length === 1 ? '' : 's'} in the squad</div>
           </div>
         </div>
@@ -330,7 +545,7 @@
       renderPlayerGrid(roster, {
         showTeam: false,
         emptyTitle: query ? 'No matches in this squad' : 'No players yet',
-        emptyBody: query ? `Nobody in ${team.name} matches "${query}".` : `Add players to ${team.name} from the admin panel.`,
+        emptyBody: query ? `Nobody in ${escapeHtml(team.name)} matches "${escapeHtml(query)}".` : `Add players to ${escapeHtml(team.name)} from the admin panel.`,
       });
     }
 
@@ -346,7 +561,7 @@
         <div class="back-row">
           <button class="back-btn" id="back-btn">&larr; All clubs</button>
           <span class="back-sep">/</span>
-          <span class="back-current">Searching "${query}"</span>
+          <span class="back-current">Searching "${escapeHtml(query)}"</span>
         </div>
       `;
       document.getElementById('back-btn').addEventListener('click', () => {
@@ -357,7 +572,7 @@
       renderPlayerGrid(matches, {
         showTeam: true,
         emptyTitle: 'No players found',
-        emptyBody: `Nobody matches "${query}" across the league.`,
+        emptyBody: `Nobody matches "${escapeHtml(query)}" across the league.`,
       });
     }
 

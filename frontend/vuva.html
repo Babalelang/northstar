@@ -34,11 +34,11 @@
   <div class="hero">
     <svg class="pitch-bg" viewBox="0 0 1180 640" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
       <rect x="0" y="0" width="1180" height="640" fill="var(--pitch)"/>
-      <g fill="none" stroke="#cfe3d5" stroke-width="2">
+      <g fill="none" stroke="#dddddb" stroke-width="2">
         <rect x="60" y="60" width="1060" height="520"/>
         <line x1="590" y1="60" x2="590" y2="580"/>
         <circle cx="590" cy="320" r="70"/>
-        <circle cx="590" cy="320" r="3" fill="#cfe3d5"/>
+        <circle cx="590" cy="320" r="3" fill="#e6f4ea"/>
         <rect x="60" y="180" width="130" height="280"/>
         <rect x="990" y="180" width="130" height="280"/>
         <rect x="60" y="260" width="45" height="120"/>
@@ -50,11 +50,11 @@
       </g>
     </svg>
     <div class="hero-inner">
-      <div class="eyebrow">South African football intelligence</div>
+    
       <h1 class="wordmark">
         <span class="l-v1">V</span><span class="l-u">U</span><span class="l-v2">V</span><span class="l-a">A</span>
       </h1>
-      <div class="tagline">The game decoded</div>
+      <div class="tagline">home to South African football</div>
       <p class="hero-sub">Standings, form, player ratings and market value for the Betway Premiership — read the way scouts and analysts read it, stripped of the noise.</p>
     </div>
     <div class="wrap">
@@ -65,26 +65,26 @@
         <div class="t-item"><div class="t-label">Most valuable</div><div class="t-value" id="ticker-value">—</div></div>
       </div>
       <div class="quicknav">
-        <div class="qn-card" data-goto="table">
+        <a class="qn-card" href="fixtures.html">
           <div class="qn-num">01</div>
-          <div class="qn-title">League table</div>
-          <div class="qn-desc">Full 2025/26 final standings, continental spots and the drop zone.</div>
-        </div>
-        <div class="qn-card" data-goto="news">
+          <div class="qn-title">Fixtures</div>
+          <div class="qn-desc">Kickoff times, scores and results for every matchweek.</div>
+        </a>
+        <a class="qn-card" href="table.html">
           <div class="qn-num">02</div>
-          <div class="qn-title">Fixtures &amp; news</div>
-          <div class="qn-desc">What's shaping the title race and the transfer market right now.</div>
-        </div>
-        <div class="qn-card" data-goto="players">
+          <div class="qn-title">League table</div>
+          <div class="qn-desc">Full final standings, continental spots and the drop zone.</div>
+        </a>
+        <a class="qn-card" href="players.html">
           <div class="qn-num">03</div>
           <div class="qn-title">Player cards</div>
           <div class="qn-desc">The VUVA Index — a composite read on form, output and role.</div>
-        </div>
-        <div class="qn-card" data-goto="market">
+        </a>
+        <a class="qn-card" href="market.html">
           <div class="qn-num">04</div>
           <div class="qn-title">Market value</div>
           <div class="qn-desc">South Africa's most valuable players, ranked and priced.</div>
-        </div>
+        </a>
       </div>
     </div>
   </div>
@@ -93,7 +93,7 @@
 <!-- TABLE -->
 <section class="page" id="table">
   <div class="wrap">
-    <h2 class="section-title">Final standings — 2025/26</h2>
+    <h2 class="section-title">Final standings</h2>
     <p class="section-sub" id="table-meta">Loading standings…</p>
     <div class="table-card">
     <table class="psl" id="table-body">
@@ -155,7 +155,7 @@
 
 <footer>
   <div class="wrap foot-row">
-    <span>VUVA — the game decoded</span>
+    <span>VUVA — home to South African football</span>
     <span>Powered entirely by the VUVA API</span>
   </div>
 </footer>

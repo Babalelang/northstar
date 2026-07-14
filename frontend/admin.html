@@ -524,8 +524,8 @@
         const kind = select.dataset.options;
         const items = optionsFor[kind] || [];
         const current = select.value;
-        select.innerHTML = `<option value="">${placeholders[kind] || 'Select…'}</option>`
-          + items.map((item) => `<option value="${item.value}">${item.label}</option>`).join('');
+        select.innerHTML = `<option value="">${escapeHtml(placeholders[kind] || 'Select…')}</option>`
+          + items.map((item) => `<option value="${item.value}">${escapeHtml(item.label)}</option>`).join('');
         if (current) select.value = current;
       });
     }
@@ -598,9 +598,9 @@
       const tbody = document.getElementById('announcementTable');
       tbody.innerHTML = state.announcements.map(item => `
         <tr>
-          <td>${item.title}<div class="muted">${item.summary || ''}</div></td>
-          <td><span class="pill">${item.status}</span></td>
-          <td>${item.announcement_type}</td>
+          <td>${escapeHtml(item.title)}<div class="muted">${escapeHtml(item.summary || '')}</div></td>
+          <td><span class="pill">${escapeHtml(item.status)}</span></td>
+          <td>${escapeHtml(item.announcement_type)}</td>
           <td>${new Date(item.updated_at).toLocaleDateString()}</td>
           <td><div class="action-row"><button class="secondary" data-action="edit-announcement" data-id="${item.id}">Edit</button><button class="secondary" data-action="delete-announcement" data-id="${item.id}">Delete</button></div></td>
         </tr>
@@ -639,9 +639,9 @@
       const tbody = document.getElementById('playerTable');
       tbody.innerHTML = pageItems.map(item => `
         <tr>
-          <td>${item.first_name} ${item.last_name}${item.is_captain ? '<span class="pill pill-captain">C</span>' : ''}<div class="muted">${item.nationality}</div></td>
-          <td>${(item.playing_position || '').toUpperCase()}</td>
-          <td>${item.team_name || item.team_id}</td>
+          <td>${escapeHtml(item.first_name)} ${escapeHtml(item.last_name)}${item.is_captain ? '<span class="pill pill-captain">C</span>' : ''}<div class="muted">${escapeHtml(item.nationality)}</div></td>
+          <td>${escapeHtml((item.playing_position || '').toUpperCase())}</td>
+          <td>${escapeHtml(item.team_name || String(item.team_id))}</td>
           <td>${item.overall_rating || '-'}</td>
           <td>${fmtCurrency(item.market_value_rands || 0)}</td>
           <td><div class="action-row"><button class="secondary" data-action="edit-player" data-id="${item.id}">Edit</button><button class="secondary" data-action="delete-player" data-id="${item.id}">Delete</button></div></td>
@@ -660,10 +660,10 @@
       const tbody = document.getElementById('teamTable');
       tbody.innerHTML = state.teams.map(item => `
         <tr>
-          <td>${item.name}</td>
-          <td>${item.city || '-'}</td>
-          <td>${item.coach ? `${item.coach.first_name} ${item.coach.last_name}` : '-'}</td>
-          <td>${item.captain ? `${item.captain.first_name} ${item.captain.last_name}` : '-'}</td>
+          <td>${escapeHtml(item.name)}</td>
+          <td>${escapeHtml(item.city || '-')}</td>
+          <td>${item.coach ? `${escapeHtml(item.coach.first_name)} ${escapeHtml(item.coach.last_name)}` : '-'}</td>
+          <td>${item.captain ? `${escapeHtml(item.captain.first_name)} ${escapeHtml(item.captain.last_name)}` : '-'}</td>
           <td>${fmtCurrency(item.market_value_rands || 0)}</td>
           <td>${item.average_rating || '-'}</td>
           <td><div class="action-row"><button class="secondary" data-action="edit-team" data-id="${item.id}">Edit</button><button class="secondary" data-action="delete-team" data-id="${item.id}">Delete</button></div></td>
@@ -675,9 +675,9 @@
       const tbody = document.getElementById('competitionTable');
       tbody.innerHTML = state.competitions.map(item => `
         <tr>
-          <td>${item.name}</td>
-          <td>${item.code}</td>
-          <td>${item.country}</td>
+          <td>${escapeHtml(item.name)}</td>
+          <td>${escapeHtml(item.code)}</td>
+          <td>${escapeHtml(item.country)}</td>
           <td><span class="pill">${item.is_active ? 'Active' : 'Inactive'}</span></td>
           <td><div class="action-row"><button class="secondary" data-action="edit-competition" data-id="${item.id}">Edit</button><button class="secondary" data-action="delete-competition" data-id="${item.id}">Delete</button></div></td>
         </tr>
@@ -690,8 +690,8 @@
         const competition = state.competitions.find((c) => c.id === item.competition_id);
         return `
         <tr>
-          <td>${item.label}</td>
-          <td>${competition ? competition.name : item.competition_id}</td>
+          <td>${escapeHtml(item.label)}</td>
+          <td>${escapeHtml(competition ? competition.name : String(item.competition_id))}</td>
           <td><span class="pill">${item.is_current ? 'Yes' : 'No'}</span></td>
           <td><div class="action-row"><button class="secondary" data-action="edit-season" data-id="${item.id}">Edit</button><button class="secondary" data-action="delete-season" data-id="${item.id}">Delete</button></div></td>
         </tr>
@@ -702,8 +702,8 @@
       const tbody = document.getElementById('venueTable');
       tbody.innerHTML = state.venues.map(item => `
         <tr>
-          <td>${item.name}</td>
-          <td>${item.city || '-'}</td>
+          <td>${escapeHtml(item.name)}</td>
+          <td>${escapeHtml(item.city || '-')}</td>
           <td>${item.capacity || '-'}</td>
           <td><div class="action-row"><button class="secondary" data-action="edit-venue" data-id="${item.id}">Edit</button><button class="secondary" data-action="delete-venue" data-id="${item.id}">Delete</button></div></td>
         </tr>
@@ -715,9 +715,9 @@
       tbody.innerHTML = state.fixtures.map(item => `
         <tr>
           <td>${new Date(item.match_datetime).toLocaleString()}</td>
-          <td>${item.home_team_name || item.home_team_id} vs ${item.away_team_name || item.away_team_id}</td>
+          <td>${escapeHtml(item.home_team_name || String(item.home_team_id))} vs ${escapeHtml(item.away_team_name || String(item.away_team_id))}</td>
           <td>${item.home_score} – ${item.away_score}</td>
-          <td><span class="pill">${item.status}</span></td>
+          <td><span class="pill">${escapeHtml(item.status)}</span></td>
           <td><div class="action-row"><button class="secondary" data-action="edit-fixture" data-id="${item.id}">Edit</button><button class="secondary" data-action="delete-fixture" data-id="${item.id}">Delete</button></div></td>
         </tr>
       `).join('');
@@ -728,7 +728,7 @@
       tbody.innerHTML = state.standings.map(item => `
         <tr>
           <td>${item.position}</td>
-          <td>${item.team_name || item.team_id}</td>
+          <td>${escapeHtml(item.team_name || String(item.team_id))}</td>
           <td>${item.played}</td>
           <td>${item.points}</td>
           <td><div class="action-row"><button class="secondary" data-action="edit-standing" data-id="${item.id}">Edit</button><button class="secondary" data-action="delete-standing" data-id="${item.id}">Delete</button></div></td>
@@ -741,9 +741,9 @@
       const me = getCurrentUser();
       tbody.innerHTML = state.users.map(item => `
         <tr>
-          <td>${item.first_name} ${item.last_name}${item.id === me?.id ? ' <span class="pill">You</span>' : ''}</td>
-          <td>${item.username}</td>
-          <td><span class="pill">${item.role}</span></td>
+          <td>${escapeHtml(item.first_name)} ${escapeHtml(item.last_name)}${item.id === me?.id ? ' <span class="pill">You</span>' : ''}</td>
+          <td>${escapeHtml(item.username)}</td>
+          <td><span class="pill">${escapeHtml(item.role)}</span></td>
           <td><span class="pill">${item.is_active ? 'Active' : 'Deactivated'}</span></td>
           <td>${item.last_login ? new Date(item.last_login).toLocaleString() : 'Never'}</td>
           <td><div class="action-row"><button class="secondary" data-action="edit-user" data-id="${item.id}">Edit</button><button class="secondary" data-action="delete-user" data-id="${item.id}" ${item.id === me?.id ? 'disabled' : ''}>Delete</button></div></td>

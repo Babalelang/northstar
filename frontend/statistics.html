@@ -210,6 +210,9 @@
     function posInfo(pos) {
       return POSITION_GROUPS[(pos || '').toLowerCase()] || { group: 'Other', color: '#55564f' };
     }
+    function isGoalkeeper(pos) {
+      return posInfo(pos).group === 'Goalkeepers';
+    }
 
     function hashColor(str) {
       let hash = 0;
@@ -220,8 +223,8 @@
       return name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
     }
     function avatar(name, photoUrl) {
-      if (photoUrl) return `<div class="board-avatar" style="background-image:url('${photoUrl}')"></div>`;
-      return `<div class="board-avatar" style="background:${hashColor(name)}">${initials(name)}</div>`;
+      if (photoUrl) return `<div class="board-avatar" style="background-image:url('${escapeHtml(photoUrl)}')"></div>`;
+      return `<div class="board-avatar" style="background:${hashColor(name)}">${escapeHtml(initials(name))}</div>`;
     }
     function formatRands(v) {
       if (!v) return 'R0';
@@ -335,6 +338,126 @@
             <div class="chart-legend-item"><span class="chart-legend-dot" style="background:#DE3831"></span>FWD</div>
           </div>
           <p class="chart-footnote">Each dot is a player with at least one goal or assist this season, positioned by goals scored (horizontal) and assists made (vertical); color marks position group. Players toward the upper right combine scoring and creating.${topScorer ? ` <b>${escapeHtml(topScorer.first_name + ' ' + topScorer.last_name)}</b> leads on goals with ${topScorer.goals}.` : ''}</p>
+        </div>`;
+    }
+
+    /* ---------------- CHART: defensive output scatter (tackles vs interceptions) ---------------- */
+    function defensiveScatterChart(players) {
+      const pts = players.filter((p) => !isGoalkeeper(p.playing_position) && ((p.tackles || 0) > 0 || (p.interceptions || 0) > 0));
+      if (pts.length < 3) {
+        return `
+          <div class="chart-card">
+            <div class="chart-head"><div class="chart-title">Defensive output</div><div class="chart-sub">Tackles vs interceptions</div></div>
+            <p class="note" style="margin-top:0; padding-top:0; border-top:none;">Not enough defensive data yet.</p>
+          </div>`;
+      }
+      const W = 480, H = 300, padL = 40, padR = 16, padT = 16, padB = 34;
+      const maxTackles = niceCeil(Math.max(...pts.map((p) => p.tackles || 0)) * 1.1);
+      const maxInterceptions = niceCeil(Math.max(...pts.map((p) => p.interceptions || 0)) * 1.1);
+      const xScale = (v) => padL + (v / maxTackles) * (W - padL - padR);
+      const yScale = (v) => (H - padB) - (v / maxInterceptions) * (H - padB - padT);
+
+      const xTicks = [0, 0.25, 0.5, 0.75, 1].map((f) => Math.round(maxTackles * f));
+      const yTicks = [0, 0.25, 0.5, 0.75, 1].map((f) => Math.round(maxInterceptions * f));
+
+      const gridlines = yTicks.map((t) => `<line x1="${padL}" x2="${W - padR}" y1="${yScale(t)}" y2="${yScale(t)}" stroke="var(--line)" stroke-width="1" />`).join('')
+        + xTicks.map((t) => `<line x1="${xScale(t)}" x2="${xScale(t)}" y1="${padT}" y2="${H - padB}" stroke="var(--line)" stroke-width="1" />`).join('');
+
+      const yLabels = yTicks.map((t) => `<text x="${padL - 8}" y="${yScale(t) + 3}" text-anchor="end" font-family="var(--mono)" font-size="9" fill="var(--ink-soft)">${t}</text>`).join('');
+      const xLabels = xTicks.map((t) => `<text x="${xScale(t)}" y="${H - padB + 16}" text-anchor="middle" font-family="var(--mono)" font-size="9" fill="var(--ink-soft)">${t}</text>`).join('');
+
+      // dot radius carries a third variable — clearances — so the chart
+      // packs tackles/interceptions/clearances into one view instead of
+      // needing a third axis.
+      const maxClearances = Math.max(...pts.map((p) => p.clearances || 0), 1);
+      const dots = pts.map((p) => {
+        const name = `${p.first_name} ${p.last_name}`;
+        const info = posInfo(p.playing_position);
+        const r = 4 + (Math.min(p.clearances || 0, maxClearances) / maxClearances) * 6;
+        return `<circle cx="${xScale(p.tackles || 0)}" cy="${yScale(p.interceptions || 0)}" r="${r.toFixed(1)}" fill="${info.color}" fill-opacity="0.78" stroke="#fff" stroke-width="1.4"><title>${escapeHtml(name)} — ${p.tackles || 0} tackles, ${p.interceptions || 0} interceptions, ${p.clearances || 0} clearances</title></circle>`;
+      }).join('');
+
+      const topDefender = [...pts].sort((a, b) => ((b.tackles || 0) + (b.interceptions || 0)) - ((a.tackles || 0) + (a.interceptions || 0)))[0];
+
+      return `
+        <div class="chart-card">
+          <div class="chart-head">
+            <div class="chart-title">Defensive output</div>
+            <div class="chart-sub">Tackles (across) vs interceptions (up)</div>
+          </div>
+          <div class="chart-svg-wrap">
+            <svg viewBox="0 0 ${W} ${H}">
+              ${gridlines}
+              <line x1="${padL}" x2="${W - padR}" y1="${H - padB}" y2="${H - padB}" stroke="var(--ink)" stroke-width="1" />
+              <line x1="${padL}" x2="${padL}" y1="${padT}" y2="${H - padB}" stroke="var(--ink)" stroke-width="1" />
+              ${yLabels}${xLabels}
+              ${dots}
+              <text x="${(W + padL) / 2}" y="${H}" text-anchor="middle" font-family="var(--mono)" font-size="9" fill="var(--ink-soft)" text-transform="uppercase">Tackles</text>
+            </svg>
+          </div>
+          <div class="chart-legend">
+            <div class="chart-legend-item"><span class="chart-legend-dot" style="background:#001489"></span>DEF</div>
+            <div class="chart-legend-item"><span class="chart-legend-dot" style="background:#007A4D"></span>MID</div>
+            <div class="chart-legend-item"><span class="chart-legend-dot" style="background:#DE3831"></span>FWD</div>
+          </div>
+          <p class="chart-footnote">Each dot is an outfield player with at least one tackle or interception; color marks position group and dot size scales with clearances made. Players toward the upper right cover the most defensive ground.${topDefender ? ` <b>${escapeHtml(topDefender.first_name + ' ' + topDefender.last_name)}</b> leads on combined tackles and interceptions.` : ''}</p>
+        </div>`;
+    }
+
+    /* ---------------- CHART: goalkeeper shot-stopping scatter (saves vs clean sheets) ---------------- */
+    function goalkeeperScatterChart(players) {
+      const pts = players.filter((p) => isGoalkeeper(p.playing_position) && ((p.saves || 0) > 0 || (p.clean_sheets || 0) > 0 || (p.goals_conceded || 0) > 0));
+      if (pts.length < 2) {
+        return `
+          <div class="chart-card">
+            <div class="chart-head"><div class="chart-title">Shot-stopping</div><div class="chart-sub">Goalkeepers</div></div>
+            <p class="note" style="margin-top:0; padding-top:0; border-top:none;">Not enough goalkeeper data yet.</p>
+          </div>`;
+      }
+      const W = 480, H = 300, padL = 40, padR = 16, padT = 16, padB = 34;
+      const maxSaves = niceCeil(Math.max(...pts.map((p) => p.saves || 0)) * 1.1);
+      const maxCleanSheets = niceCeil(Math.max(...pts.map((p) => p.clean_sheets || 0)) * 1.1);
+      const xScale = (v) => padL + (v / maxSaves) * (W - padL - padR);
+      const yScale = (v) => (H - padB) - (v / maxCleanSheets) * (H - padB - padT);
+
+      const xTicks = [0, 0.25, 0.5, 0.75, 1].map((f) => Math.round(maxSaves * f));
+      const yTicks = [0, 0.25, 0.5, 0.75, 1].map((f) => Math.round(maxCleanSheets * f));
+
+      const gridlines = yTicks.map((t) => `<line x1="${padL}" x2="${W - padR}" y1="${yScale(t)}" y2="${yScale(t)}" stroke="var(--line)" stroke-width="1" />`).join('')
+        + xTicks.map((t) => `<line x1="${xScale(t)}" x2="${xScale(t)}" y1="${padT}" y2="${H - padB}" stroke="var(--line)" stroke-width="1" />`).join('');
+
+      const yLabels = yTicks.map((t) => `<text x="${padL - 8}" y="${yScale(t) + 3}" text-anchor="end" font-family="var(--mono)" font-size="9" fill="var(--ink-soft)">${t}</text>`).join('');
+      const xLabels = xTicks.map((t) => `<text x="${xScale(t)}" y="${H - padB + 16}" text-anchor="middle" font-family="var(--mono)" font-size="9" fill="var(--ink-soft)">${t}</text>`).join('');
+
+      // dot size carries goals conceded — smaller dot, fewer conceded, so a
+      // big dot in the top-right (lots of saves, lots of clean sheets) but
+      // still large in size flags a keeper facing heavy traffic.
+      const maxConceded = Math.max(...pts.map((p) => p.goals_conceded || 0), 1);
+      const dots = pts.map((p) => {
+        const name = `${p.first_name} ${p.last_name}`;
+        const r = 4 + (Math.min(p.goals_conceded || 0, maxConceded) / maxConceded) * 6;
+        return `<circle cx="${xScale(p.saves || 0)}" cy="${yScale(p.clean_sheets || 0)}" r="${r.toFixed(1)}" fill="#FFB612" fill-opacity="0.85" stroke="#fff" stroke-width="1.4"><title>${escapeHtml(name)} — ${p.saves || 0} saves, ${p.clean_sheets || 0} clean sheets, ${p.goals_conceded || 0} conceded</title></circle>`;
+      }).join('');
+
+      const topKeeper = [...pts].sort((a, b) => (b.clean_sheets || 0) - (a.clean_sheets || 0))[0];
+
+      return `
+        <div class="chart-card">
+          <div class="chart-head">
+            <div class="chart-title">Shot-stopping</div>
+            <div class="chart-sub">Saves (across) vs clean sheets (up)</div>
+          </div>
+          <div class="chart-svg-wrap">
+            <svg viewBox="0 0 ${W} ${H}">
+              ${gridlines}
+              <line x1="${padL}" x2="${W - padR}" y1="${H - padB}" y2="${H - padB}" stroke="var(--ink)" stroke-width="1" />
+              <line x1="${padL}" x2="${padL}" y1="${padT}" y2="${H - padB}" stroke="var(--ink)" stroke-width="1" />
+              ${yLabels}${xLabels}
+              ${dots}
+              <text x="${(W + padL) / 2}" y="${H}" text-anchor="middle" font-family="var(--mono)" font-size="9" fill="var(--ink-soft)" text-transform="uppercase">Saves</text>
+            </svg>
+          </div>
+          <p class="chart-footnote">Each dot is a goalkeeper with recorded saves, clean sheets, or goals conceded; dot size scales with goals conceded, so a big dot still in the upper right is a keeper earning clean sheets despite facing a lot of shots.${topKeeper ? ` <b>${escapeHtml(topKeeper.first_name + ' ' + topKeeper.last_name)}</b> leads on clean sheets.` : ''}</p>
         </div>`;
     }
 
@@ -540,12 +663,16 @@
         const totalAssists = players.reduce((sum, p) => sum + (p.assists || 0), 0);
         const avgRating = players.length ? (players.reduce((sum, p) => sum + (p.overall_rating || 0), 0) / players.length) : 0;
         const totalMarketValue = players.reduce((sum, p) => sum + (p.market_value_rands || 0), 0) + teams.reduce((sum, t) => sum + (t.market_value_rands || 0), 0);
+        const totalTackles = players.reduce((sum, p) => sum + (p.tackles || 0), 0);
+        const totalCleanSheets = players.reduce((sum, p) => sum + (p.clean_sheets || 0), 0);
 
         const tickerStats = [
           { label: 'Players tracked', value: players.length, accent: 'green' },
           { label: 'Clubs', value: teams.length, accent: 'blue' },
           { label: 'Goals this season', value: totalGoals, accent: 'gold' },
           { label: 'Assists this season', value: totalAssists, accent: 'red' },
+          { label: 'Tackles this season', value: totalTackles, accent: 'blue' },
+          { label: 'Clean sheets', value: totalCleanSheets, accent: 'gold' },
           { label: 'Avg player rating', value: avgRating ? avgRating.toFixed(1) : '-', accent: 'green' },
           { label: 'Combined market value', value: formatRands(totalMarketValue), accent: 'gold' },
         ];
@@ -555,6 +682,17 @@
         const insights = [];
         const topScorer = [...players].filter((p) => p.goals > 0).sort((a, b) => b.goals - a.goals)[0];
         if (topScorer) insights.push(`<b>${escapeHtml(topScorer.first_name + ' ' + topScorer.last_name)}</b> leads the league with <b>${topScorer.goals} goals</b>${topScorer.team_name ? ` for ${escapeHtml(topScorer.team_name)}` : ''}.`);
+
+        const topDefender = [...players].filter((p) => !isGoalkeeper(p.playing_position) && ((p.tackles || 0) + (p.interceptions || 0) + (p.clearances || 0)) > 0)
+          .sort((a, b) => ((b.tackles || 0) + (b.interceptions || 0) + (b.clearances || 0)) - ((a.tackles || 0) + (a.interceptions || 0) + (a.clearances || 0)))[0];
+        if (topDefender) {
+          const total = (topDefender.tackles || 0) + (topDefender.interceptions || 0) + (topDefender.clearances || 0);
+          insights.push(`<b>${escapeHtml(topDefender.first_name + ' ' + topDefender.last_name)}</b> leads all outfield players with <b>${total} defensive actions</b> (tackles, interceptions and clearances combined).`);
+        }
+
+        const topKeeper = [...players].filter((p) => isGoalkeeper(p.playing_position) && (p.clean_sheets || 0) > 0).sort((a, b) => (b.clean_sheets || 0) - (a.clean_sheets || 0))[0];
+        if (topKeeper) insights.push(`<b>${escapeHtml(topKeeper.first_name + ' ' + topKeeper.last_name)}</b> has the most clean sheets in the league with <b>${topKeeper.clean_sheets}</b>.`);
+
         const richestClub = [...teams].filter((t) => t.market_value_rands).sort((a, b) => b.market_value_rands - a.market_value_rands)[0];
         if (richestClub) insights.push(`<b>${escapeHtml(richestClub.name)}</b> carries the league's highest squad value at <b>${formatRands(richestClub.market_value_rands)}</b>.`);
         if (standings.length) {
@@ -566,6 +704,8 @@
         // ---- charts ----
         chartGrid.innerHTML = [
           attackingScatterChart(players),
+          defensiveScatterChart(players),
+          goalkeeperScatterChart(players),
           ratingHistogramChart(players),
           clubQuadrantChart(teams),
           compositionDonutChart(players),
@@ -577,6 +717,18 @@
 
         const topAssists = [...players].filter((p) => p.assists > 0).sort((a, b) => b.assists - a.assists).slice(0, 5)
           .map((p) => ({ name: `${p.first_name} ${p.last_name}`, meta: p.team_name || 'Unattached', value: p.assists, photo: p.photo_url }));
+
+        const bestDefenders = [...players]
+          .filter((p) => !isGoalkeeper(p.playing_position) && ((p.tackles || 0) + (p.interceptions || 0) + (p.clearances || 0)) > 0)
+          .map((p) => ({ ...p, defTotal: (p.tackles || 0) + (p.interceptions || 0) + (p.clearances || 0) }))
+          .sort((a, b) => b.defTotal - a.defTotal).slice(0, 5)
+          .map((p) => ({ name: `${p.first_name} ${p.last_name}`, meta: `${p.tackles || 0}T · ${p.interceptions || 0}I · ${p.clearances || 0}C`, value: p.defTotal, photo: p.photo_url }));
+
+        const bestGoalkeepers = [...players]
+          .filter((p) => isGoalkeeper(p.playing_position) && ((p.saves || 0) > 0 || (p.clean_sheets || 0) > 0))
+          .map((p) => ({ ...p, gkScore: (p.clean_sheets || 0) * 3 + (p.saves || 0) * 0.1 - (p.goals_conceded || 0) * 0.5 }))
+          .sort((a, b) => b.gkScore - a.gkScore).slice(0, 5)
+          .map((p) => ({ name: `${p.first_name} ${p.last_name}`, meta: `${p.saves || 0} saves · ${p.goals_conceded || 0} conceded`, value: `${p.clean_sheets || 0} CS`, photo: p.photo_url }));
 
         const bestRated = [...players].filter((p) => p.overall_rating).sort((a, b) => b.overall_rating - a.overall_rating).slice(0, 5)
           .map((p) => ({ name: `${p.first_name} ${p.last_name}`, meta: (p.playing_position || '').toUpperCase(), value: Number(p.overall_rating).toFixed(1), photo: p.photo_url }));
@@ -596,6 +748,8 @@
         const boards = [
           board('Top scorers', 'Goals this season', topScorers),
           board('Top assists', 'Assists this season', topAssists),
+          board('Best defenders', 'Tackles + interceptions + clearances', bestDefenders),
+          board('Golden gloves', 'Clean sheets, saves & conceded', bestGoalkeepers),
           board('Highest rated', 'Overall rating', bestRated),
           board('Ones to watch', 'Potential minus current rating', risingTalent),
           board('Most valuable players', 'By market value', mostValuablePlayers),

@@ -116,14 +116,20 @@ class PlayerOut(BaseModel):
     playing_position: str
     team_id: int
     team_name: str | None = None
+    is_captain: bool = False
     goals: int = 0
     assists: int = 0
     minutes_played: int = 0
+    saves: int | None = None
+    clean_sheets: int | None = None
+    goals_conceded: int | None = None
+    tackles: int | None = None
+    interceptions: int | None = None
+    clearances: int | None = None
     form_rating: float | None = None
     market_value_rands: int | None = None
     overall_rating: float | None = None
     potential_rating: float | None = None
-
 
 class CompetitionOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)

@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 
+from api.deps import get_current_user
 from database.database import get_db
 from models.fixture import Fixture
+from models.user import User
 from models.venue import Venue
 from schemas.public import FixtureOut
 from services.sync_service import sync_standings_from_fixtures
@@ -54,7 +56,11 @@ def get_fixture(fixture_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/{fixture_id}/recompute-standings")
-def recompute_standings_for_fixture(fixture_id: int, db: Session = Depends(get_db)):
+def recompute_standings_for_fixture(
+    fixture_id: int,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
     """Convenience endpoint: after a result is entered/edited for this
     fixture, recompute the table for its season/competition from the
     fixtures we hold - no external call, just our own data.

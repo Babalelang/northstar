@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 class AnnouncementBase(BaseModel):
@@ -31,6 +31,11 @@ class AnnouncementOut(AnnouncementBase):
     created_at: datetime
     updated_at: datetime
 
+def _is_goalkeeper_position(position: str | None) -> bool:
+    """Matches 'GK', 'Goalkeeper', 'Keeper', case-insensitively."""
+    p = (position or "").strip().lower()
+    return p == "gk" or "goalkeeper" in p or "keeper" in p
+
 
 class PlayerBase(BaseModel):
     first_name: str
@@ -60,6 +65,26 @@ class PlayerBase(BaseModel):
     overall_rating: float | None = None
     potential_rating: float | None = None
 
+    @model_validator(mode="after")
+    def clear_stats_outside_position(self):
+        """
+        A player's position decides which stat family is allowed:
+        - Goalkeepers: saves / clean_sheets / goals_conceded
+        - Everyone else: tackles / interceptions / clearances
+        Goals, assists, and minutes are always allowed for any position.
+        Whichever block doesn't apply gets silently nulled out here, so a
+        stray value typed into the wrong field in the admin form never
+        makes it into the database.
+        """
+        if _is_goalkeeper_position(self.playing_position):
+            self.tackles = None
+            self.interceptions = None
+            self.clearances = None
+        else:
+            self.saves = None
+            self.clean_sheets = None
+            self.goals_conceded = None
+        return self
 
 class PlayerCreate(PlayerBase):
     pass

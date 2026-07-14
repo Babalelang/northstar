@@ -39,7 +39,7 @@ function populateSeasonFilter(standings) {
 
   const current = select.value;
   select.innerHTML = '<option value="all">All seasons</option>'
-    + Array.from(seen.entries()).map(([key, label]) => `<option value="${key}">${label}</option>`).join('');
+    + Array.from(seen.entries()).map(([key, label]) => `<option value="${escapeHtml(key)}">${escapeHtml(label)}</option>`).join('');
   if (current && Array.from(select.options).some((opt) => opt.value === current)) {
     select.value = current;
   }
@@ -62,7 +62,7 @@ function renderStandingsRows(standings) {
     if (pos === 1) tr.className = "zone-title";
     else if (pos <= 5) tr.className = "zone-cont";
     else if (pos >= 15) tr.className = "zone-rel";
-    tr.innerHTML = `<td class="pos">${pos}</td><td class="team">${row.team.name}</td>
+    tr.innerHTML = `<td class="pos">${pos}</td><td class="team">${escapeHtml(row.team.name)}</td>
       <td class="num">${row.played}</td><td class="num">${row.wins}</td><td class="num">${row.draws}</td><td class="num">${row.losses}</td>
       <td class="num">${row.goals_for}</td><td class="num">${row.goals_against}</td><td class="num">${gd > 0 ? "+" + gd : gd}</td><td class="pts">${row.points}</td>`;
     tbody.appendChild(tr);
@@ -168,9 +168,9 @@ async function loadNewsAndPlayers() {
       ng.innerHTML = announcements.length
         ? announcements.slice(0, 6).map((item) => `
           <article class="news-card">
-            <div class="news-tag">${item.announcement_type}</div>
-            <div class="news-head">${item.title}</div>
-            <div class="news-body">${item.summary || item.body}</div>
+            <div class="news-tag">${escapeHtml(item.announcement_type)}</div>
+            <div class="news-head">${escapeHtml(item.title)}</div>
+            <div class="news-body">${escapeHtml(item.summary || item.body)}</div>
           </article>
         `).join('')
         : '<div class="news-card"><div class="news-head">No announcements yet</div><div class="news-body">Publish one from the admin panel and it will show up here.</div></div>';
@@ -193,8 +193,8 @@ async function loadNewsAndPlayers() {
         <div class="pcard">
           <div class="pcard-top">
             <div>
-              <div class="pcard-name">${player.first_name} ${player.last_name}</div>
-              <div class="pcard-role">${player.playing_position.toUpperCase()} — ${player.team_name || player.team_id}</div>
+              <div class="pcard-name">${escapeHtml(player.first_name)} ${escapeHtml(player.last_name)}</div>
+              <div class="pcard-role">${escapeHtml(player.playing_position.toUpperCase())} — ${escapeHtml(player.team_name || String(player.team_id))}</div>
             </div>
             <div class="pcard-index">${player.overall_rating || 0}</div>
           </div>
@@ -226,7 +226,7 @@ async function loadNewsAndPlayers() {
       const maxVal = Math.max(...marketValues.map((m) => m.value), 1);
       mvBody.innerHTML = marketValues.map((m) => {
         const pct = Math.round((m.value / maxVal) * 100);
-        return `<tr><td class="rank">${m.rank}</td><td class="name">${m.name}</td><td class="club">${m.club}</td><td class="club">${m.pos}</td><td class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div></td><td class="val">${formatRandShort(m.value)}</td></tr>`;
+        return `<tr><td class="rank">${m.rank}</td><td class="name">${escapeHtml(m.name)}</td><td class="club">${escapeHtml(m.club)}</td><td class="club">${escapeHtml(m.pos)}</td><td class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div></td><td class="val">${formatRandShort(m.value)}</td></tr>`;
       }).join("");
 
       const totalValueEl = document.getElementById('mv-total-value');

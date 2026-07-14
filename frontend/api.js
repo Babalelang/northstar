@@ -33,7 +33,35 @@ if (document.readyState === 'loading') {
   highlightActiveNav();
 }
 
-const API_BASE = "http://127.0.0.1:8000/api";
+// Shared HTML-escaping helper. Player/team/announcement text ultimately
+// comes from the admin panel, but it's still attacker-controllable if an
+// editor account is ever compromised (or someone fat-fingers a "<" into a
+// name) - escaping before it goes into innerHTML costs nothing and closes
+// off stored-XSS via that content rendering on public pages.
+function escapeHtml(str) {
+  if (str === null || str === undefined) return "";
+  return String(str).replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  }[c]));
+}
+
+// Only allow http(s)/relative URLs into src="…"/href="…"/url(…) contexts.
+// Blocks a "javascript:" or "data:" URL entered into a logo/photo/website
+// field from executing when someone clicks/loads it.
+function safeUrl(url) {
+  if (!url) return "";
+  const trimmed = String(url).trim();
+  if (/^(https?:)?\/\//i.test(trimmed) || /^[.\/]/.test(trimmed)) {
+    return escapeHtml(trimmed);
+  }
+  return "";
+}
+
+// Falls back to the same hardcoded local dev URL as before if no override
+// is provided, so existing local setups keep working unchanged. For a real
+// deployment, set `window.VUVA_API_BASE = "https://your-api.example.com/api"`
+// in a small inline script (or a separate config.js) loaded before this file.
+const API_BASE = (typeof window !== "undefined" && window.VUVA_API_BASE) || "http://127.0.0.1:8000/api";
 
 // Auth token lives in localStorage so a page refresh doesn't log the
 // admin out. This is a real deployed static site (not a Claude artifact
