@@ -61,7 +61,7 @@ function safeUrl(url) {
 // is provided, so existing local setups keep working unchanged. For a real
 // deployment, set `window.VUVA_API_BASE = "https://your-api.example.com/api"`
 // in a small inline script (or a separate config.js) loaded before this file.
-const API_BASE = (typeof window !== "undefined" && window.VUVA_API_BASE) || "http://127.0.0.1:8000/api";
+const API_BASE = "https://northstar-oyhx.onrender.com/api";
 
 // Auth token lives in localStorage so a page refresh doesn't log the
 // admin out. This is a real deployed static site (not a Claude artifact
