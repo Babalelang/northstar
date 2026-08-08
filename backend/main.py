@@ -104,6 +104,7 @@ app.include_router(fixtures_api.router, prefix="/api")
 app.include_router(admin_api.router, prefix="/api")
 app.include_router(public.router, prefix="/api")
 app.include_router(auth_api.router, prefix="/api")
+app.include_router(seasons_router, prefix="/api")
 
 
 @app.get("/", tags=["Root"])
