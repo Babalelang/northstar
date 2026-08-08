@@ -1,9 +1,11 @@
+from datetime import date, datetime
+
 from sqlalchemy import Column,DateTime,Enum,Date,Float,Integer,String, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database.database import Base
 import enum
-   
+
 
 class PlayerStatistic(Base):
     __tablename__ = "playerstatistics"
@@ -53,7 +55,16 @@ class PlayerStatistic(Base):
 
     red_cards = Column(Integer, nullable=False, default=0)
 
+    # --- goalkeeper stats (NEW - these were only ever on the flat Player
+    # row before, so a new season had nowhere to record them separately) ---
+    saves = Column(Integer, nullable=True)
+    goals_conceded = Column(Integer, nullable=True)
     clean_sheets = Column(Integer, nullable=False, default=0)
+
+    # --- defender stats (NEW, same reason as above) ---
+    tackles = Column(Integer, nullable=True)
+    interceptions = Column(Integer, nullable=True)
+    clearances = Column(Integer, nullable=True)
 
     own_goals = Column(Integer, nullable=False, default=0)
 
@@ -81,7 +92,7 @@ class PlayerStatistic(Base):
     created_at = Column(DateTime(timezone = True),
                         server_default = func.now(),
                         nullable = False)
-    
+
     updated_at = Column(DateTime(timezone = True),
                         server_default = func.now(),
                         onupdate = func.now(),

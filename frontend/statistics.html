@@ -11,6 +11,14 @@
   <style>
     /* ============ STATISTICS — PAGE-LOCAL ADDITIONS ============ */
 
+    /* --- Season selector --- */
+    .season-bar{ display:flex; align-items:center; gap:10px; margin-bottom:24px; flex-wrap:wrap; }
+    .season-bar label{ font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft); }
+    .season-bar select{
+      font: inherit; font-family:var(--mono); font-size:12.5px; padding:8px 12px; border-radius:10px;
+      border:1px solid var(--line); background:#fff; color:var(--ink);
+    }
+
     /* --- Ticker: colored per stat instead of flat white --- */
 .stat-ticker{
     display:grid;
@@ -186,6 +194,11 @@
     <h2 class="section-title">League statistics</h2>
     <p class="section-sub">The season, broken down — top performers, best squads, and where the league's talent sits, all pulled live from our own database.</p>
 
+    <div class="season-bar" id="seasonBar" style="display:none;">
+      <label for="seasonSelect">Season</label>
+      <select id="seasonSelect"></select>
+    </div>
+
     <div class="stat-ticker" id="statTicker"></div>
     <div class="insight-strip" id="insightStrip"></div>
 
@@ -233,9 +246,6 @@
       if (abs >= 1e6) return `R${(v / 1e6).toFixed(1)}m`;
       if (abs >= 1e3) return `R${Math.round(v / 1e3)}k`;
       return `R${v.toLocaleString()}`;
-    }
-    function escapeHtml(str) {
-      return (str || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
 
     // Rounds a value up to a "nice" axis maximum (5, 10, 20, 25, 50, 100...)
@@ -366,9 +376,6 @@
       const yLabels = yTicks.map((t) => `<text x="${padL - 8}" y="${yScale(t) + 3}" text-anchor="end" font-family="var(--mono)" font-size="9" fill="var(--ink-soft)">${t}</text>`).join('');
       const xLabels = xTicks.map((t) => `<text x="${xScale(t)}" y="${H - padB + 16}" text-anchor="middle" font-family="var(--mono)" font-size="9" fill="var(--ink-soft)">${t}</text>`).join('');
 
-      // dot radius carries a third variable — clearances — so the chart
-      // packs tackles/interceptions/clearances into one view instead of
-      // needing a third axis.
       const maxClearances = Math.max(...pts.map((p) => p.clearances || 0), 1);
       const dots = pts.map((p) => {
         const name = `${p.first_name} ${p.last_name}`;
@@ -429,9 +436,6 @@
       const yLabels = yTicks.map((t) => `<text x="${padL - 8}" y="${yScale(t) + 3}" text-anchor="end" font-family="var(--mono)" font-size="9" fill="var(--ink-soft)">${t}</text>`).join('');
       const xLabels = xTicks.map((t) => `<text x="${xScale(t)}" y="${H - padB + 16}" text-anchor="middle" font-family="var(--mono)" font-size="9" fill="var(--ink-soft)">${t}</text>`).join('');
 
-      // dot size carries goals conceded — smaller dot, fewer conceded, so a
-      // big dot in the top-right (lots of saves, lots of clean sheets) but
-      // still large in size flags a keeper facing heavy traffic.
       const maxConceded = Math.max(...pts.map((p) => p.goals_conceded || 0), 1);
       const dots = pts.map((p) => {
         const name = `${p.first_name} ${p.last_name}`;
@@ -640,6 +644,43 @@
         </div>`;
     }
 
+    // ---- season selector state ----
+    let seasons = [];
+    let currentSeasonId = null;
+
+    async function loadSeasons() {
+      const seasonBar = document.getElementById('seasonBar');
+      const select = document.getElementById('seasonSelect');
+      try {
+        seasons = await apiGet('/seasons/');
+      } catch (err) {
+        // No public /seasons/ endpoint (or it's offline) - fall back to the
+        // old "always shows whatever's live" behaviour instead of breaking
+        // the whole page. Add a public GET /seasons/ route to enable this.
+        seasons = [];
+      }
+
+      if (!seasons.length) {
+        seasonBar.style.display = 'none';
+        return;
+      }
+
+      const current = seasons.find((s) => s.is_current) || seasons[0];
+      currentSeasonId = current.id;
+
+      select.innerHTML = seasons
+        .slice()
+        .sort((a, b) => b.id - a.id)
+        .map((s) => `<option value="${s.id}" ${s.id === currentSeasonId ? 'selected' : ''}>${escapeHtml(s.label)}</option>`)
+        .join('');
+
+      seasonBar.style.display = 'flex';
+      select.addEventListener('change', () => {
+        currentSeasonId = Number(select.value);
+        loadStats();
+      });
+    }
+
     async function loadStats() {
       const ticker = document.getElementById('statTicker');
       const insightStrip = document.getElementById('insightStrip');
@@ -647,14 +688,19 @@
       const boardGrid = document.getElementById('boardGrid');
 
       try {
+        const playersPath = currentSeasonId ? `/players/?season_id=${currentSeasonId}` : '/players/';
+
         const [players, teams, standings] = await Promise.all([
-          apiGet('/players/'),
+          apiGet(playersPath),
           apiGet('/teams/'),
-          apiGet('/standings/').catch(() => []),
+          apiGet(currentSeasonId ? `/standings/?season_id=${currentSeasonId}` : '/standings/').catch(() => []),
         ]);
 
         if (!players.length && !teams.length) {
           chartGrid.innerHTML = '<div class="empty-state"><div class="news-head">No data yet</div><p class="news-body">Add teams and players from the admin panel to see league statistics here.</p></div>';
+          boardGrid.innerHTML = '';
+          ticker.innerHTML = '';
+          insightStrip.innerHTML = '';
           return;
         }
 
@@ -768,7 +814,11 @@
         chartGrid.innerHTML = '<div class="empty-state"><div class="news-head">Backend offline</div><p class="news-body">Start the API with uvicorn main:app --reload to load statistics.</p></div>';
       }
     }
-    loadStats();
+
+    (async function init() {
+      await loadSeasons();
+      await loadStats();
+    })();
   </script>
 </body>
 </html>

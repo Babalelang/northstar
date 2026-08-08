@@ -103,6 +103,59 @@ class PlayerOut(PlayerBase):
     created_at: datetime
     updated_at: datetime
 
+
+# ---------------------------------------------------------------------
+# PlayerStatistic - season-by-season numbers, kept separate from the
+# flat "current" numbers on Player above. Statistics.html (once its
+# season selector is wired up) reads from here instead, so starting a
+# new season means a fresh blank row rather than overwriting last
+# season's totals.
+# ---------------------------------------------------------------------
+
+class PlayerStatisticBase(BaseModel):
+    player_id: int
+    season_id: int
+    competition_id: int
+    appearances: int = 0
+    starts: int = 0
+    minutes_played: int = 0
+    goals: int = 0
+    assists: int = 0
+    yellow_cards: int = 0
+    red_cards: int = 0
+    own_goals: int = 0
+    penalties_scored: int = 0
+    penalties_missed: int = 0
+    rating: float | None = None
+    # goalkeeper stats
+    saves: int | None = None
+    goals_conceded: int | None = None
+    clean_sheets: int = 0
+    # defender stats
+    tackles: int | None = None
+    interceptions: int | None = None
+    clearances: int | None = None
+
+
+class PlayerStatisticCreate(PlayerStatisticBase):
+    pass
+
+
+class PlayerStatisticUpdate(PlayerStatisticBase):
+    pass
+
+
+class PlayerStatisticOut(PlayerStatisticBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    player_name: str | None = None
+    season_label: str | None = None
+    competition_name: str | None = None
+    created_at: datetime
+    updated_at: datetime
+
+
 # --- Coach schemas live above TeamBase because TeamBase references CoachIn -
 # Pydantic resolves annotations at class-definition time, so CoachIn has to
 # already exist by the time TeamBase is defined, or this raises a NameError
@@ -171,6 +224,56 @@ class TeamOut(TeamBase):
     captain: CaptainOut | None = None  # derived: the player on this team with is_captain=True
     created_at: datetime
     updated_at: datetime
+
+
+# ---------------------------------------------------------------------
+# TeamStatistic - season-by-season club numbers, same idea as
+# PlayerStatistic above.
+# ---------------------------------------------------------------------
+
+class TeamStatisticBase(BaseModel):
+    team_id: int
+    season_id: int
+    competition_id: int
+    matches_played: int = 0
+    wins: int = 0
+    draws: int = 0
+    losses: int = 0
+    goals_for: int = 0
+    goals_against: int = 0
+    goal_difference: int = 0
+    points: int = 0
+    clean_sheets: int = 0
+    yellow_cards: int = 0
+    red_cards: int = 0
+    shots: int = 0
+    shots_on_target: int = 0
+    possession_percentage: float | None = None
+    passes_attempted: int = 0
+    passes_completed: int = 0
+    pass_accuracy: float | None = None
+    expected_goals: float | None = None
+    expected_goals_against: float | None = None
+
+
+class TeamStatisticCreate(TeamStatisticBase):
+    pass
+
+
+class TeamStatisticUpdate(TeamStatisticBase):
+    pass
+
+
+class TeamStatisticOut(TeamStatisticBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    team_name: str | None = None
+    season_label: str | None = None
+    competition_name: str | None = None
+    created_at: datetime
+    updated_at: datetime
+
 
 class CompetitionBase(BaseModel):
     name: str

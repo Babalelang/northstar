@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 
 from models.player import Player
+from models.playerstatistic import PlayerStatistic
 
 
 class PlayersService:
@@ -57,3 +58,63 @@ class PlayersService:
     def delete(db: Session, player: Player):
         db.delete(player)
         db.commit()
+
+    # -------------------------------------------------------------
+    # NEW: season-aware reads. This is what fixes "statistics shows
+    # last season's numbers" - it pulls goals/assists/saves/tackles/etc
+    # from PlayerStatistic for the requested season instead of the flat
+    # (never-reset) columns on Player.
+    # -------------------------------------------------------------
+
+    @staticmethod
+    def get_all_with_season_stats(
+        db: Session,
+        season_id: int | None = None,
+        competition_id: int | None = None,
+        team_id: int | None = None,
+        position: str | None = None,
+    ):
+        """
+        Returns a list of (player, stat) tuples where `stat` is the
+        matching PlayerStatistic row for the given season (or None if
+        the player has no recorded stats for that season yet, or if no
+        season_id was passed at all).
+
+        A player with no stat row for the season comes back as
+        (player, None) - callers should treat that as zeroed-out stats,
+        NOT fall back to the player's flat/career columns, or you're
+        right back to the stale-data bug this exists to fix.
+        """
+        player_query = db.query(Player)
+        if team_id is not None:
+            player_query = player_query.filter(Player.team_id == team_id)
+        if position:
+            player_query = player_query.filter(Player.playing_position == position)
+        players = player_query.order_by(Player.last_name.asc()).all()
+
+        if season_id is None:
+            return [(p, None) for p in players]
+
+        stat_query = db.query(PlayerStatistic).filter(PlayerStatistic.season_id == season_id)
+        if competition_id is not None:
+            stat_query = stat_query.filter(PlayerStatistic.competition_id == competition_id)
+        stats_by_player_id = {s.player_id: s for s in stat_query.all()}
+
+        return [(p, stats_by_player_id.get(p.id)) for p in players]
+
+    @staticmethod
+    def get_season_stat(
+        db: Session,
+        player_id: int,
+        season_id: int,
+        competition_id: int,
+    ) -> PlayerStatistic | None:
+        return (
+            db.query(PlayerStatistic)
+            .filter(
+                PlayerStatistic.player_id == player_id,
+                PlayerStatistic.season_id == season_id,
+                PlayerStatistic.competition_id == competition_id,
+            )
+            .first()
+        )

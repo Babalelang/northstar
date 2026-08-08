@@ -21,6 +21,7 @@ from models import (
     Coach,
 
 )
+from models.playerstatistic import PlayerStatistic
 from models.user import User
 from schemas.admin import (
     AnnouncementCreate,
@@ -36,6 +37,9 @@ from schemas.admin import (
     PlayerCreate,
     PlayerOut,
     PlayerUpdate,
+    PlayerStatisticCreate,
+    PlayerStatisticOut,
+    PlayerStatisticUpdate,
     SeasonCreate,
     SeasonOut,
     SeasonUpdate,
@@ -256,6 +260,131 @@ def update_player(player_id: int, payload: PlayerUpdate, db: Session = Depends(g
     out = PlayerOut.model_validate(item)
     out.market_value_rands = item.market_value_rands
     return out
+
+
+# ---------------------------------------------------------------------
+# NEW: PlayerStatistic CRUD - season-scoped goals/assists/saves/tackles/
+# etc, kept separate from the flat fields on Player above. This is what
+# the admin Players form's new "Statistics season" selector reads from
+# and writes to, so entering this season's numbers no longer overwrites
+# (or gets overwritten by) last season's.
+# ---------------------------------------------------------------------
+
+def _player_statistic_out(db: Session, item: PlayerStatistic) -> PlayerStatisticOut:
+    player = db.get(Player, item.player_id)
+    season = db.get(Season, item.season_id)
+    competition = db.get(Competition, item.competition_id)
+    out = PlayerStatisticOut.model_validate(item)
+    out.player_name = f"{player.first_name} {player.last_name}" if player else None
+    out.season_label = season.label if season else None
+    out.competition_name = competition.name if competition else None
+    return out
+
+
+@router.get("/player-statistics", response_model=list[PlayerStatisticOut])
+def list_player_statistics(
+    player_id: int | None = None,
+    season_id: int | None = None,
+    competition_id: int | None = None,
+    db: Session = Depends(get_db),
+):
+    query = db.query(PlayerStatistic)
+    if player_id is not None:
+        query = query.filter(PlayerStatistic.player_id == player_id)
+    if season_id is not None:
+        query = query.filter(PlayerStatistic.season_id == season_id)
+    if competition_id is not None:
+        query = query.filter(PlayerStatistic.competition_id == competition_id)
+    items = query.all()
+    return [_player_statistic_out(db, item) for item in items]
+
+
+@router.post("/player-statistics", response_model=PlayerStatisticOut, status_code=status.HTTP_201_CREATED)
+def create_player_statistic(payload: PlayerStatisticCreate, db: Session = Depends(get_db)):
+    dupe = (
+        db.query(PlayerStatistic)
+        .filter(
+            PlayerStatistic.player_id == payload.player_id,
+            PlayerStatistic.season_id == payload.season_id,
+            PlayerStatistic.competition_id == payload.competition_id,
+        )
+        .first()
+    )
+    if dupe:
+        raise HTTPException(
+            status_code=409,
+            detail="A stats row for this player/season/competition already exists - update it instead.",
+        )
+
+    item = PlayerStatistic(
+        player_id=payload.player_id,
+        season_id=payload.season_id,
+        competition_id=payload.competition_id,
+        appearances=payload.appearances,
+        starts=payload.starts,
+        minutes_played=payload.minutes_played,
+        goals=payload.goals,
+        assists=payload.assists,
+        yellow_cards=payload.yellow_cards,
+        red_cards=payload.red_cards,
+        own_goals=payload.own_goals,
+        penalties_scored=payload.penalties_scored,
+        penalties_missed=payload.penalties_missed,
+        rating=payload.rating,
+        saves=payload.saves,
+        goals_conceded=payload.goals_conceded,
+        clean_sheets=payload.clean_sheets,
+        tackles=payload.tackles,
+        interceptions=payload.interceptions,
+        clearances=payload.clearances,
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return _player_statistic_out(db, item)
+
+
+@router.put("/player-statistics/{stat_id}", response_model=PlayerStatisticOut)
+def update_player_statistic(stat_id: int, payload: PlayerStatisticUpdate, db: Session = Depends(get_db)):
+    item = db.get(PlayerStatistic, stat_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Player statistic not found")
+
+    item.player_id = payload.player_id
+    item.season_id = payload.season_id
+    item.competition_id = payload.competition_id
+    item.appearances = payload.appearances
+    item.starts = payload.starts
+    item.minutes_played = payload.minutes_played
+    item.goals = payload.goals
+    item.assists = payload.assists
+    item.yellow_cards = payload.yellow_cards
+    item.red_cards = payload.red_cards
+    item.own_goals = payload.own_goals
+    item.penalties_scored = payload.penalties_scored
+    item.penalties_missed = payload.penalties_missed
+    item.rating = payload.rating
+    item.saves = payload.saves
+    item.goals_conceded = payload.goals_conceded
+    item.clean_sheets = payload.clean_sheets
+    item.tackles = payload.tackles
+    item.interceptions = payload.interceptions
+    item.clearances = payload.clearances
+
+    db.commit()
+    db.refresh(item)
+    return _player_statistic_out(db, item)
+
+
+@router.delete("/player-statistics/{stat_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_player_statistic(stat_id: int, db: Session = Depends(get_db)):
+    item = db.get(PlayerStatistic, stat_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Player statistic not found")
+    db.delete(item)
+    db.commit()
+    return None
+
 
 @router.get("/teams", response_model=list[TeamOut])
 def list_teams(db: Session = Depends(get_db)):
@@ -642,4 +771,3 @@ def delete_fixture(fixture_id: int, db: Session = Depends(get_db)):
     db.delete(item)
     db.commit()
     return None
-
