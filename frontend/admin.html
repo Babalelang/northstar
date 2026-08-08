@@ -41,26 +41,32 @@
     .form-grid label.checkbox-label { flex-direction: row; align-items: center; gap: 8px; }
     .form-grid label.checkbox-label input[type="checkbox"] { width: 16px; height: 16px; margin: 0; padding: 0; accent-color: var(--ink); }
 
-    /* NEW: the "which season are these numbers for" band on the Players
-       form - styled distinctly (green-tinted) so it doesn't get mistaken
-       for just another bio field. */
-    .stat-season-band {
-      grid-column: 1 / -1;
+    /* Player Stats panel: season toolbar + wide editable table */
+    .stats-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
       background: #eef7f1;
       border: 1px solid #cfe8d8;
       border-radius: 12px;
       padding: 14px 16px;
-      display: grid;
-      grid-template-columns: repeat(2, minmax(220px, 1fr));
-      gap: 14px;
-      align-items: end;
+      margin-bottom: 16px;
     }
-    .stat-season-band .stat-season-note {
-      grid-column: 1 / -1;
-      font-size: 12px;
-      color: var(--ink-soft);
-      margin: -4px 0 0;
-    }
+    .stats-toolbar label { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-soft); }
+    .stats-toolbar select { min-width: 200px; }
+    .stats-toolbar-actions { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+    #statsSeasonNote { font-size: 12px; }
+
+    .stats-table { min-width: 1500px; }
+    .stats-table th, .stats-table td { padding: 6px 8px; white-space: nowrap; }
+    .stats-table .stats-col-name { min-width: 170px; white-space: normal; }
+    .stats-table input[type="number"] { width: 62px; padding: 6px 6px; text-align: right; }
+    .stats-table input[name="rating"] { width: 56px; }
+    .stats-table td.stats-player-cell { font-size: 13px; }
+    .stats-table td.stats-player-cell .muted { font-size: 11px; }
+    .stats-row-saved { background: #f2faf5; }
+    .stats-row-dirty td.stats-col-name { box-shadow: inset 3px 0 0 var(--gold); }
 
     /* LOGIN SCREEN */
     #loginScreen { min-height: calc(100vh - 72px); display: flex; align-items: center; justify-content: center; padding: 24px; }
@@ -120,6 +126,7 @@
       <div class="admin-menu">
         <button type="button" class="active" data-section="announcements">Announcements</button>
         <button type="button" data-section="players">Players</button>
+        <button type="button" data-section="playerstats">Player Stats</button>
         <button type="button" data-section="teams">Teams</button>
         <button type="button" data-section="competitions">Competitions</button>
         <button type="button" data-section="seasons">Seasons</button>
@@ -149,20 +156,14 @@
 
     <section class="admin-card" data-panel="players">
       <h3 class="section-title" style="font-size: 24px;">Players</h3>
+      <p class="muted" style="margin: -8px 0 16px;">Bio and profile info only. For goals/assists/cards/saves/tackles/etc, use the <b>Player Stats</b> tab — those are recorded per season.</p>
       <form id="playerForm" class="form-grid">
-        <div class="stat-season-band">
-          <label>Statistics season<select name="stat_season_id" id="statSeasonSelect" required data-options="seasons"><option value="">Select season…</option></select></label>
-          <p class="stat-season-note">The stat fields below (goals, assists, saves, tackles, etc.) are recorded against this season. Switch seasons here before editing a player to see/enter that season's numbers instead of overwriting the current one.</p>
-        </div>
         <label>First name<input name="first_name" required /></label>
         <label>Last name<input name="last_name" required /></label>
         <label>Nationality<input name="nationality" required /></label>
         <label>Position<select name="playing_position"><option value="gk">GK</option><option value="cb">CB</option><option value="lb">LB</option><option value="rb">RB</option><option value="cdm">CDM</option><option value="cm">CM</option><option value="cam">CAM</option><option value="lm">LM</option><option value="rm">RM</option><option value="lw">LW</option><option value="rw">RW</option><option value="cf">CF</option><option value="st">ST</option></select></label>
         <label>Date of birth<input type="date" name="date_of_birth" required /></label>
         <label>Team<select name="team_id" required data-options="teams"><option value="">Select team…</option></select></label>
-        <label>Goals<input type="number" min="0" name="goals" value="0" /></label>
-        <label>Assists<input type="number" min="0" name="assists" value="0" /></label>
-        <label>Minutes<input type="number" min="0" name="minutes_played" value="0" /></label>
         <label>Form rating<input type="number" step="0.1" min="0" max="99" name="form_rating" value="70" /></label>
         <label>Photo URL<input name="photo_url" /></label>
         <label>Height (cm)<input type="number" min="0" name="height_cm" /></label>
@@ -173,20 +174,6 @@
         <label>Market value override (R)<input type="number" min="0" name="market_value_rands" placeholder="Leave blank to auto-calculate" /></label>
         <label class="checkbox-label"><input type="checkbox" name="is_captain" /> Team captain</label>
 
-        <div class="field-group">
-          <div class="field-group-label">Goalkeeper stats (optional)</div>
-          <label>Saves<input type="number" min="0" name="saves" /></label>
-          <label>Clean sheets<input type="number" min="0" name="clean_sheets" /></label>
-          <label>Goals conceded<input type="number" min="0" name="goals_conceded" /></label>
-        </div>
-
-        <div class="field-group">
-          <div class="field-group-label">Defensive stats (optional)</div>
-          <label>Tackles<input type="number" min="0" name="tackles" /></label>
-          <label>Interceptions<input type="number" min="0" name="interceptions" /></label>
-          <label>Clearances<input type="number" min="0" name="clearances" /></label>
-        </div>
-
         <div class="action-row" style="grid-column: 1 / -1;"><button type="submit">Save player</button><button type="button" class="secondary" id="resetPlayer">Reset</button></div>
       </form>
 
@@ -196,6 +183,54 @@
       </div>
       <div class="table-wrap"><table><thead><tr><th>Name</th><th>Position</th><th>Team</th><th>Rating</th><th>Value</th><th>Actions</th></tr></thead><tbody id="playerTable"></tbody></table></div>
       <div class="pagination" id="playerPagination"></div>
+    </section>
+
+    <section class="admin-card" data-panel="playerstats">
+      <h3 class="section-title" style="font-size: 24px;">Player Stats</h3>
+      <p class="section-sub">Season-by-season numbers, one row per player. Pick a season, edit inline, then either save one row or everything at once.</p>
+
+      <div class="stats-toolbar">
+        <label>Season
+          <select id="statsSeasonSelect" data-options="seasons"><option value="">Select season…</option></select>
+        </label>
+        <span class="muted" id="statsSeasonNote"></span>
+        <div class="stats-toolbar-actions">
+          <button type="button" class="secondary" id="statsCopyFromPrevious">Copy from previous season</button>
+          <button type="button" id="statsSaveAll">Save all</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="stats-table">
+          <thead>
+            <tr>
+              <th class="stats-col-name">Player</th>
+              <th>Team</th>
+              <th>App</th>
+              <th>Starts</th>
+              <th>Mins</th>
+              <th>Goals</th>
+              <th>Ast</th>
+              <th>YC</th>
+              <th>RC</th>
+              <th>CS</th>
+              <th>OG</th>
+              <th>Pen&nbsp;S</th>
+              <th>Pen&nbsp;M</th>
+              <th>Rating</th>
+              <th>Saves</th>
+              <th>GC</th>
+              <th>Tkl</th>
+              <th>Int</th>
+              <th>Clr</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="playerStatsTable">
+            <tr><td colspan="20" class="muted" style="padding: 16px;">Pick a season above to load stats.</td></tr>
+          </tbody>
+        </table>
+      </div>
     </section>
 
     <section class="admin-card" data-panel="teams">
@@ -392,7 +427,7 @@
     // playerSearch / playerPage drive the client-side search + pagination
     // on the Players list; PLAYER_PAGE_SIZE controls rows per page.
     const PLAYER_PAGE_SIZE = 10;
-    const state = { announcements: [], players: [], teams: [], competitions: [], seasons: [], venues: [], fixtures: [], standings: [], users: [], editingAnnouncement: null, editingPlayer: null, editingTeam: null, editingCompetition: null, editingSeason: null, editingVenue: null, editingFixture: null, editingStanding: null, editingUser: null, playerSearch: '', playerPage: 1 };
+    const state = { announcements: [], players: [], teams: [], competitions: [], seasons: [], venues: [], fixtures: [], standings: [], users: [], editingAnnouncement: null, editingPlayer: null, editingTeam: null, editingCompetition: null, editingSeason: null, editingVenue: null, editingFixture: null, editingStanding: null, editingUser: null, playerSearch: '', playerPage: 1, statsSeasonId: null, statsRowsById: {} };
 
     const summaryGrid = document.getElementById('summaryGrid');
     const announcementForm = document.getElementById('announcementForm');
@@ -404,7 +439,9 @@
     const fixtureForm = document.getElementById('fixtureForm');
     const standingForm = document.getElementById('standingForm');
     const userForm = document.getElementById('userForm');
-    const statSeasonSelect = document.getElementById('statSeasonSelect');
+    const statsSeasonSelect = document.getElementById('statsSeasonSelect');
+    const statsSeasonNote = document.getElementById('statsSeasonNote');
+    const playerStatsTableBody = document.getElementById('playerStatsTable');
 
     // maps every edit-* action to the form it should scroll to - used so the
     // admin lands on the (top-of-page) form fields instead of staying
@@ -556,40 +593,178 @@
       });
     }
 
-    // Defaults the "Statistics season" select to whichever season is
+    // Defaults the Player Stats season select to whichever season is
     // marked is_current, but only if nothing's already chosen (so it
-    // doesn't clobber a season the admin picked mid-edit).
-    function defaultStatSeasonIfEmpty() {
-      if (!statSeasonSelect || statSeasonSelect.value) return;
+    // doesn't clobber a season the admin picked mid-session).
+    function defaultStatsSeasonIfEmpty() {
+      if (!statsSeasonSelect || statsSeasonSelect.value) return;
       const current = state.seasons.find((s) => s.is_current);
-      if (current) statSeasonSelect.value = String(current.id);
+      if (current) statsSeasonSelect.value = String(current.id);
     }
 
-    // Pulls the PlayerStatistic row (if any) for the player currently
-    // being edited + whichever season is selected, and fills the stat
-    // fields from it. With no player being edited (a brand-new player)
-    // or no stat row yet for that season, the stat fields are just left
-    // as whatever's currently in them / zeroed via resetPlayerForm.
-    async function loadStatFieldsForSelectedSeason() {
-      if (!state.editingPlayer || !statSeasonSelect.value) return;
+    // Every column on the PlayerStatistic table, in display order. Kept in
+    // one place so the row template and the payload builder can't drift
+    // out of sync with each other.
+    const STAT_FIELD_DEFS = [
+      { name: 'appearances' }, { name: 'starts' }, { name: 'minutes_played' },
+      { name: 'goals' }, { name: 'assists' },
+      { name: 'yellow_cards' }, { name: 'red_cards' },
+      { name: 'clean_sheets' }, { name: 'own_goals' },
+      { name: 'penalties_scored' }, { name: 'penalties_missed' },
+      { name: 'rating', step: '0.1', nullable: true },
+      { name: 'saves', nullable: true }, { name: 'goals_conceded', nullable: true },
+      { name: 'tackles', nullable: true }, { name: 'interceptions', nullable: true }, { name: 'clearances', nullable: true },
+    ];
+
+    function statsRowHtml(player, row) {
+      const cells = STAT_FIELD_DEFS.map(({ name, step, nullable }) => {
+        const raw = row ? row[name] : null;
+        const value = raw === null || raw === undefined ? (nullable ? '' : 0) : raw;
+        return `<td><input type="number" ${step ? `step="${step}"` : 'min="0"'} name="${name}" value="${value}" /></td>`;
+      }).join('');
+      return `
+        <tr data-player-id="${player.id}" class="${row ? 'stats-row-saved' : ''}">
+          <td class="stats-col-name stats-player-cell">${escapeHtml(player.first_name)} ${escapeHtml(player.last_name)}<div class="muted">${escapeHtml((player.playing_position || '').toUpperCase())}</div></td>
+          <td class="muted">${escapeHtml(player.team_name || '-')}</td>
+          ${cells}
+          <td><button type="button" class="secondary" data-action="save-stat-row">Save</button></td>
+        </tr>`;
+    }
+
+    function collectStatRowPayload(tr, seasonId, competitionId) {
+      const get = (name) => tr.querySelector(`[name="${name}"]`);
+      return {
+        player_id: Number(tr.dataset.playerId),
+        season_id: seasonId,
+        competition_id: competitionId,
+        ...Object.fromEntries(STAT_FIELD_DEFS.map(({ name, nullable }) => {
+          const el = get(name);
+          const raw = el ? el.value : '';
+          if (raw === '') return [name, nullable ? null : 0];
+          return [name, Number(raw)];
+        })),
+      };
+    }
+
+    async function loadPlayerStatsPanel() {
+      const seasonId = statsSeasonSelect.value;
+      if (!seasonId) {
+        playerStatsTableBody.innerHTML = '<tr><td colspan="20" class="muted" style="padding: 16px;">Pick a season above to load stats.</td></tr>';
+        statsSeasonNote.textContent = '';
+        return;
+      }
+      state.statsSeasonId = Number(seasonId);
+      playerStatsTableBody.innerHTML = '<tr><td colspan="20" class="muted" style="padding: 16px;">Loading…</td></tr>';
       try {
-        const rows = await apiGet(`/admin/player-statistics?player_id=${state.editingPlayer.id}&season_id=${statSeasonSelect.value}`);
-        const row = rows[0] || null;
-        state.editingPlayerStatistic = row;
-        const statFieldNames = ['goals', 'assists', 'minutes_played', 'saves', 'clean_sheets', 'goals_conceded', 'tackles', 'interceptions', 'clearances'];
-        statFieldNames.forEach((name) => {
-          const field = playerForm.querySelector(`[name="${name}"]`);
-          if (!field) return;
-          field.value = row ? (row[name] ?? '') : 0;
-        });
+        const rows = await apiGet(`/admin/player-statistics?season_id=${seasonId}`);
+        state.statsRowsById = {};
+        rows.forEach((r) => { state.statsRowsById[r.player_id] = r; });
+        const sortedPlayers = [...state.players].sort((a, b) => `${a.first_name}${a.last_name}`.localeCompare(`${b.first_name}${b.last_name}`));
+        playerStatsTableBody.innerHTML = sortedPlayers.map((p) => statsRowHtml(p, state.statsRowsById[p.id])).join('') || '<tr><td colspan="20" class="muted" style="padding: 16px;">No players yet - add some in the Players tab first.</td></tr>';
+        const season = state.seasons.find((s) => s.id === Number(seasonId));
+        statsSeasonNote.textContent = season ? `${rows.length} of ${state.players.length} players have a saved row for ${season.label}.` : '';
       } catch (err) {
-        // If the endpoint isn't reachable, leave whatever's in the form -
-        // don't block editing bio fields over a stats-history hiccup.
+        playerStatsTableBody.innerHTML = `<tr><td colspan="20" class="muted" style="padding: 16px;">Couldn't load stats: ${escapeHtml(err.message)}</td></tr>`;
       }
     }
 
-    statSeasonSelect.addEventListener('change', () => {
-      loadStatFieldsForSelectedSeason();
+    statsSeasonSelect.addEventListener('change', loadPlayerStatsPanel);
+
+    // Save All - bulk-upserts every row currently shown in the table for
+    // the selected season in one request. This is what actually fixes
+    // "last season's stats never made it into the 25/26 row": copy them
+    // in (see the Copy button below) or just edit the blank table, then
+    // hit this once instead of opening every player individually.
+    document.getElementById('statsSaveAll').addEventListener('click', async () => {
+      const seasonId = Number(statsSeasonSelect.value || 0);
+      if (!seasonId) { alert('Pick a season first.'); return; }
+      const season = state.seasons.find((s) => s.id === seasonId);
+      if (!season) return;
+
+      const rows = Array.from(playerStatsTableBody.querySelectorAll('tr[data-player-id]'));
+      if (!rows.length) return;
+
+      const ok = await confirmAction({
+        title: 'Save all stats?',
+        message: `This saves season stats for all ${rows.length} players shown, for ${season.label}. Existing rows for this season are overwritten with whatever's currently in the table.`,
+        confirmLabel: 'Save all',
+      });
+      if (!ok) return;
+
+      const payload = rows.map((tr) => collectStatRowPayload(tr, seasonId, season.competition_id));
+      const saveAllBtn = document.getElementById('statsSaveAll');
+      saveAllBtn.disabled = true;
+      const originalLabel = saveAllBtn.textContent;
+      saveAllBtn.textContent = 'Saving…';
+      try {
+        await apiPost('/admin/player-statistics/bulk', payload);
+        await loadPlayerStatsPanel();
+      } catch (err) {
+        alert(`Save all failed: ${err.message}`);
+      } finally {
+        saveAllBtn.disabled = false;
+        saveAllBtn.textContent = originalLabel;
+      }
+    });
+
+    // Per-row Save - same bulk endpoint, just with a single-row payload,
+    // for when you only want to commit one player without touching the
+    // rest of the table.
+    playerStatsTableBody.addEventListener('click', async (event) => {
+      const button = event.target.closest('button[data-action="save-stat-row"]');
+      if (!button) return;
+      const seasonId = Number(statsSeasonSelect.value || 0);
+      const season = state.seasons.find((s) => s.id === seasonId);
+      if (!season) return;
+      const tr = button.closest('tr');
+      const payload = [collectStatRowPayload(tr, seasonId, season.competition_id)];
+      button.disabled = true;
+      const originalLabel = button.textContent;
+      button.textContent = 'Saving…';
+      try {
+        await apiPost('/admin/player-statistics/bulk', payload);
+        tr.classList.remove('stats-row-dirty');
+        tr.classList.add('stats-row-saved');
+        button.textContent = 'Saved';
+        setTimeout(() => { button.textContent = originalLabel; button.disabled = false; }, 900);
+      } catch (err) {
+        alert(`Couldn't save this row: ${err.message}`);
+        button.disabled = false;
+        button.textContent = originalLabel;
+      }
+    });
+
+    // Copy from previous season - fills the table with an earlier season's
+    // numbers so an admin can carry stats forward (e.g. from 24/25 into
+    // 25/26) and adjust before committing. Nothing is written until "Save
+    // all" is clicked afterwards - this only fills the form.
+    document.getElementById('statsCopyFromPrevious').addEventListener('click', async () => {
+      const seasonId = Number(statsSeasonSelect.value || 0);
+      if (!seasonId) { alert('Pick a season first.'); return; }
+      const targetSeason = state.seasons.find((s) => s.id === seasonId);
+      const sortedSeasons = [...state.seasons].sort((a, b) => new Date(a.start_date || 0) - new Date(b.start_date || 0));
+      const idx = sortedSeasons.findIndex((s) => s.id === seasonId);
+      const previous = idx > 0 ? sortedSeasons[idx - 1] : null;
+      if (!previous) { alert('No earlier season found to copy from.'); return; }
+
+      const ok = await confirmAction({
+        title: 'Copy from previous season?',
+        message: `This fills the table below with ${previous.label}'s numbers so you can review and adjust before saving them as ${targetSeason ? targetSeason.label : 'this season'}. Nothing is saved until you click "Save all".`,
+        confirmLabel: 'Copy',
+      });
+      if (!ok) return;
+
+      try {
+        const rows = await apiGet(`/admin/player-statistics?season_id=${previous.id}`);
+        const byPlayer = {};
+        rows.forEach((r) => { byPlayer[r.player_id] = r; });
+        const sortedPlayers = [...state.players].sort((a, b) => `${a.first_name}${a.last_name}`.localeCompare(`${b.first_name}${b.last_name}`));
+        playerStatsTableBody.innerHTML = sortedPlayers.map((p) => statsRowHtml(p, byPlayer[p.id])).join('');
+        playerStatsTableBody.querySelectorAll('tr[data-player-id]').forEach((tr) => tr.classList.add('stats-row-dirty'));
+        statsSeasonNote.textContent = `Showing ${previous.label}'s numbers, not yet saved to ${targetSeason ? targetSeason.label : 'this season'} - click "Save all" to commit.`;
+      } catch (err) {
+        alert(`Couldn't load ${previous.label}'s stats: ${err.message}`);
+      }
     });
 
     async function loadDashboard() {
@@ -616,7 +791,7 @@
       state.standings = standings;
 
       populateSelectOptions();
-      defaultStatSeasonIfEmpty();
+      defaultStatsSeasonIfEmpty();
 
       renderAnnouncements();
       renderPlayers();
@@ -645,9 +820,7 @@
       clearFormError(playerForm);
       playerForm.reset();
       state.editingPlayer = null;
-      state.editingPlayerStatistic = null;
       playerForm.querySelector('button[type="submit"]').textContent = 'Save player';
-      defaultStatSeasonIfEmpty();
     }
     function resetTeamForm() { clearFormError(teamForm); teamForm.reset(); state.editingTeam = null; teamForm.querySelector('button[type="submit"]').textContent = 'Save team'; }
     function resetCompetitionForm() { clearFormError(competitionForm); competitionForm.reset(); state.editingCompetition = null; competitionForm.querySelector('button[type="submit"]').textContent = 'Save competition'; }
@@ -853,77 +1026,21 @@
       await loadDashboard();
     });
 
-    // Upserts a PlayerStatistic row for the given player, using whatever
-    // season is selected in the Players form plus the current stat field
-    // values. This is what actually fixes "can't enter new season stats":
-    // each save writes a row scoped to (player, season, competition)
-    // instead of overwriting one flat, never-reset set of columns.
-    async function saveStatSnapshot(playerId, formValues) {
-      const seasonId = Number(statSeasonSelect.value || 0);
-      if (!seasonId) return; // no season picked - skip season-scoped save silently
-
-      const season = state.seasons.find((s) => s.id === seasonId);
-      if (!season) return;
-
-      const statPayload = {
-        player_id: playerId,
-        season_id: seasonId,
-        competition_id: season.competition_id,
-        goals: Number(formValues.goals || 0),
-        assists: Number(formValues.assists || 0),
-        minutes_played: Number(formValues.minutes_played || 0),
-        saves: formValues.saves === '' || formValues.saves == null ? null : Number(formValues.saves),
-        clean_sheets: formValues.clean_sheets === '' || formValues.clean_sheets == null ? 0 : Number(formValues.clean_sheets),
-        goals_conceded: formValues.goals_conceded === '' || formValues.goals_conceded == null ? null : Number(formValues.goals_conceded),
-        tackles: formValues.tackles === '' || formValues.tackles == null ? null : Number(formValues.tackles),
-        interceptions: formValues.interceptions === '' || formValues.interceptions == null ? null : Number(formValues.interceptions),
-        clearances: formValues.clearances === '' || formValues.clearances == null ? null : Number(formValues.clearances),
-      };
-
-      try {
-        const existingRows = await apiGet(`/admin/player-statistics?player_id=${playerId}&season_id=${seasonId}&competition_id=${season.competition_id}`);
-        const existing = existingRows[0];
-        if (existing) {
-          await apiPut(`/admin/player-statistics/${existing.id}`, statPayload);
-        } else {
-          await apiPost('/admin/player-statistics', statPayload);
-        }
-      } catch (err) {
-        showFormError(playerForm, `Player saved, but recording season stats failed: ${err.message}`);
-      }
-    }
-
     playerForm.addEventListener('submit', async (event) => {
       event.preventDefault();
       clearFormError(playerForm);
-      const rawValues = Object.fromEntries(new FormData(playerForm).entries());
-      const payload = { ...rawValues };
-      delete payload.stat_season_id; // not part of the Player payload - handled separately below
+      const payload = Object.fromEntries(new FormData(playerForm).entries());
 
-      payload.goals = Number(payload.goals || 0);
-      payload.assists = Number(payload.assists || 0);
-      payload.minutes_played = Number(payload.minutes_played || 0);
       payload.form_rating = Number(payload.form_rating || 0);
       payload.height_cm = Number(payload.height_cm || 0);
       payload.club_shirt_number = Number(payload.club_shirt_number || 0);
       payload.team_id = Number(payload.team_id);
 
-      // new fields - all optional, so blank stays null rather than 0
+      // all optional, so blank stays null rather than 0
       payload.overall_rating = payload.overall_rating ? Number(payload.overall_rating) : null;
       payload.potential_rating = payload.potential_rating ? Number(payload.potential_rating) : null;
       payload.market_value_rands = payload.market_value_rands ? Number(payload.market_value_rands) : null;
-      payload.saves = payload.saves ? Number(payload.saves) : null;
-      payload.clean_sheets = payload.clean_sheets ? Number(payload.clean_sheets) : null;
-      payload.goals_conceded = payload.goals_conceded ? Number(payload.goals_conceded) : null;
-      payload.tackles = payload.tackles ? Number(payload.tackles) : null;
-      payload.interceptions = payload.interceptions ? Number(payload.interceptions) : null;
-      payload.clearances = payload.clearances ? Number(payload.clearances) : null;
       payload.is_captain = playerForm.querySelector('input[name="is_captain"]').checked;
-
-      if (!statSeasonSelect.value) {
-        showFormError(playerForm, 'Pick a statistics season before saving.');
-        return;
-      }
 
       const negErr = validateNoNegativeNumbers(playerForm);
       if (negErr) { showFormError(playerForm, negErr); return; }
@@ -949,14 +1066,11 @@
       });
       if (!ok) return;
 
-      let savedPlayer;
       if (state.editingPlayer) {
-        savedPlayer = await apiPut(`/admin/players/${state.editingPlayer.id}`, payload);
+        await apiPut(`/admin/players/${state.editingPlayer.id}`, payload);
       } else {
-        savedPlayer = await apiPost('/admin/players', payload);
+        await apiPost('/admin/players', payload);
       }
-
-      await saveStatSnapshot(savedPlayer.id, rawValues);
 
       resetPlayerForm();
       await loadDashboard();
@@ -1315,11 +1429,6 @@
           field.value = value ?? '';
         });
         playerForm.querySelector('button[type="submit"]').textContent = 'Update player';
-        // Now that bio fields are filled, pull this season's stat numbers
-        // (whichever season is currently selected) instead of leaving the
-        // flat/legacy values that just got copied in above.
-        defaultStatSeasonIfEmpty();
-        await loadStatFieldsForSelectedSeason();
       } else if (action === 'edit-team') {
         const item = state.teams.find((entry) => entry.id === id);
         if (!item) return;
@@ -1426,7 +1535,13 @@
     });
 
     document.querySelectorAll('.admin-menu button').forEach((button) => {
-      button.addEventListener('click', () => showPanel(button.dataset.section));
+      button.addEventListener('click', () => {
+        showPanel(button.dataset.section);
+        if (button.dataset.section === 'playerstats') {
+          defaultStatsSeasonIfEmpty();
+          loadPlayerStatsPanel();
+        }
+      });
     });
     showPanel('announcements');
 

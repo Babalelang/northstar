@@ -386,6 +386,59 @@ def delete_player_statistic(stat_id: int, db: Session = Depends(get_db)):
     return None
 
 
+@router.post("/player-statistics/bulk", response_model=list[PlayerStatisticOut])
+def bulk_upsert_player_statistics(payload: list[PlayerStatisticCreate], db: Session = Depends(get_db)):
+    """
+    Upserts many PlayerStatistic rows in one request, keyed on
+    (player_id, season_id, competition_id) - existing rows are updated
+    in place, new ones are created. This is what the admin "Save All"
+    button calls: it lets an admin push a whole season's worth of
+    numbers (e.g. everything that was sitting in last season's stats
+    but never got carried over to the new season's row) in a single
+    request instead of one save per player.
+    """
+    results = []
+    for row in payload:
+        existing = (
+            db.query(PlayerStatistic)
+            .filter(
+                PlayerStatistic.player_id == row.player_id,
+                PlayerStatistic.season_id == row.season_id,
+                PlayerStatistic.competition_id == row.competition_id,
+            )
+            .first()
+        )
+        if existing:
+            existing.appearances = row.appearances
+            existing.starts = row.starts
+            existing.minutes_played = row.minutes_played
+            existing.goals = row.goals
+            existing.assists = row.assists
+            existing.yellow_cards = row.yellow_cards
+            existing.red_cards = row.red_cards
+            existing.own_goals = row.own_goals
+            existing.penalties_scored = row.penalties_scored
+            existing.penalties_missed = row.penalties_missed
+            existing.rating = row.rating
+            existing.saves = row.saves
+            existing.goals_conceded = row.goals_conceded
+            existing.clean_sheets = row.clean_sheets
+            existing.tackles = row.tackles
+            existing.interceptions = row.interceptions
+            existing.clearances = row.clearances
+            item = existing
+        else:
+            item = PlayerStatistic(**row.model_dump())
+            db.add(item)
+        db.flush()
+        results.append(item)
+
+    db.commit()
+    for item in results:
+        db.refresh(item)
+    return [_player_statistic_out(db, item) for item in results]
+
+
 @router.get("/teams", response_model=list[TeamOut])
 def list_teams(db: Session = Depends(get_db)):
     teams = db.query(Team).order_by(Team.name.asc()).all()
