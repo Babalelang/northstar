@@ -5,13 +5,16 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+
 from schemas import public
+
 from api import standings_api
 from api import admin_api
 from api import teams_api
 from api import players_api
 from api import fixtures_api
 from api import auth_api
+from api.seasons import router as seasons_router
 
 from database.database import Base, engine
 
